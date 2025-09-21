@@ -4,13 +4,37 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,11 +43,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ZipcheckfrontTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Scaffold(
+                    containerColor = Color.White,   // 배경 흰색
+                    contentColor = Color.Black
+                ) { innerPadding ->
+                    // MainScreen의 패딩을 Scaffold가 제공하는 innerPadding으로 설정합니다.
+                    MainScreen(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize())
                 }
             }
         }
@@ -31,17 +59,139 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun MainScreen(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier           // ✅ Scaffold가 준 innerPadding 받기
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
+        // 1) 상단 바 (가운데 제목 + 우측 아이콘)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "ZipCheck",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.Black
+            )
+            Icon(
+                painter = painterResource(id = R.drawable.profile_user),
+                contentDescription = "User Profile",
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 4.dp)
+                    .size(24.dp)
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // 2) 배너 카드
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp, bottom = 16.dp),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(2.5.dp, Color.Black),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 250.dp)   // ⬅ 필요 높이만큼 늘어나게(고정 250dp 대신 권장)
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "안전하게 집을 \n거래할 수 있는 \nLH를 추천",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text("<LH Link>", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                }
+                Icon(
+                    painter = painterResource(id = R.drawable.main_icon),
+                    contentDescription = "LH-link",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(104.dp)
+                )
+            }
+        }
+
+        // 3) 카드 아래 구분선(위/아래 간격 넉넉히)
+        Divider(
+            modifier = Modifier.padding(vertical = 32.dp),
+            color = Color.Black,
+            thickness = 2.5.dp
+        )
+
+        // 4) 버튼 2×2
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                ButtonWithIcon("조회", painterResource(id = R.drawable.main_search), Modifier.weight(1f))
+                ButtonWithIcon("탐색", painterResource(id = R.drawable.main_map), Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                ButtonWithIcon("사기 이력", painterResource(id = R.drawable.main_history_fraud), Modifier.weight(1f))
+                ButtonWithIcon("등록", painterResource(id = R.drawable.main_assign), Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+fun ButtonWithIcon(
+    text: String,
+    icon: Painter,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(120.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.5.dp, Color.Black),
+        color = Color.White
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                painter = icon,
+                contentDescription = text,
+                modifier = Modifier
+                    .size(36.dp)
+                    .padding(end = 16.dp)
+            )
+            Text(text)
+        }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun DefaultPreview() {
     ZipcheckfrontTheme {
-        Greeting("Android")
+        MainScreen()
     }
 }
