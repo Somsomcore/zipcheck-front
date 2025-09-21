@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,8 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 
 class MainActivity : ComponentActivity() {
@@ -43,15 +44,36 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ZipcheckfrontTheme {
+                val navController = rememberNavController()
                 Scaffold(
                     containerColor = Color.White,   // 배경 흰색
                     contentColor = Color.Black
                 ) { innerPadding ->
-                    // MainScreen의 패딩을 Scaffold가 제공하는 innerPadding으로 설정합니다.
-                    MainScreen(
+                    // NavController로 화면 전환 설정
+                    NavHost(
+                        navController = navController,
+                        startDestination = "main_screen",
                         modifier = Modifier
                             .padding(innerPadding)
-                            .fillMaxSize())
+                            .fillMaxSize()
+                    ) {
+                        // MainScreen route
+                        composable("main_screen") {
+                            MainScreen(navController = navController)
+                        }
+                        // Other screen routes
+                        composable("search") {SearchScreen()
+                        }
+                        composable("map") {
+                            MapScreen()
+                        }
+                        composable("fraud_history") {
+                            FraudHistoryScreen()
+                        }
+                        composable("register") {
+                            RegisterScreen()
+                        }
+                    }
                 }
             }
         }
@@ -59,7 +81,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
+fun MainScreen(
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier           // ✅ Scaffold가 준 innerPadding 받기
             .fillMaxSize()
@@ -142,16 +167,16 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                ButtonWithIcon("조회", painterResource(id = R.drawable.main_search), Modifier.weight(1f))
-                ButtonWithIcon("탐색", painterResource(id = R.drawable.main_map), Modifier.weight(1f))
+                ButtonWithIcon("조회", painterResource(id = R.drawable.main_search), Modifier.weight(1f), onClick = { navController.navigate("search") })
+                ButtonWithIcon("탐색", painterResource(id = R.drawable.main_map), Modifier.weight(1f), onClick = { navController.navigate("map") })
             }
             Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                ButtonWithIcon("사기 이력", painterResource(id = R.drawable.main_history_fraud), Modifier.weight(1f))
-                ButtonWithIcon("등록", painterResource(id = R.drawable.main_assign), Modifier.weight(1f))
+                ButtonWithIcon("사기 이력", painterResource(id = R.drawable.main_history_fraud), Modifier.weight(1f), onClick = { navController.navigate("fraud_history") })
+                ButtonWithIcon("등록", painterResource(id = R.drawable.main_register), Modifier.weight(1f), onClick = { navController.navigate("register") })
             }
         }
     }
@@ -185,13 +210,5 @@ fun ButtonWithIcon(
             )
             Text(text)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    ZipcheckfrontTheme {
-        MainScreen()
     }
 }
