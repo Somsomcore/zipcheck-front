@@ -81,6 +81,7 @@ fun SearchAddressScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
+
     ) {
         // 상단 바 (뒤로 가기 버튼과 제목)
         Box(

@@ -80,6 +80,9 @@ class MainActivity : ComponentActivity() {
                                 InputAddressDetailScreen(navController = navController, roadAddress = roadAddress)
                             }
                         }
+                        composable("search_second") {
+                            SearchSecondScreen(navController = navController)
+                        }
                         composable("map") {
                             MapScreen()
                         }
