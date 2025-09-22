@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.ui.theme.Black
@@ -65,6 +67,16 @@ fun SearchScreen(navController: NavController) {
 
     // 모든 필드가 채워졌는지 확인하는 변수
     val allFieldsFilled = address.isNotEmpty() && detailAddress.isNotEmpty() && deposit.isNotEmpty() && houseType.isNotEmpty() && area.isNotEmpty()
+
+    // ⭐ 추가/수정: SearchAddressScreen에서 돌아올 때 주소를 받아오는 로직
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("selectedAddress")?.observe(
+            lifecycleOwner
+        ) { result ->
+            address = result
+        }
+    }
 
     // 화면 전체를 Column으로 구성
     Column(
@@ -141,6 +153,7 @@ fun SearchScreen(navController: NavController) {
                 // ✅ SearchTextField 대신 ClickableTextField 사용
                 ClickableTextField(
                     label = "매물 주소",
+                    value = address,
                     placeholderText = "지번, 도로명, 건물명으로 검색",
                     leadingIcon = {
                         Icon(
@@ -274,6 +287,7 @@ fun SearchTextField(
 @Composable
 fun ClickableTextField(
     label: String? = null,
+    value: String, // ⭐ 추가: 표시할 값 (주소)
     placeholderText: String = "",
     leadingIcon: @Composable (() -> Unit)? = null,
     onClick: () -> Unit
@@ -328,9 +342,10 @@ fun ClickableTextField(
                     leadingIcon()
                     Spacer(modifier = Modifier.width(8.dp))
                 }
+                // ⭐ 변경: value가 비어있지 않으면 value를, 비어있으면 placeholderText를 표시
                 Text(
-                    text = placeholderText,
-                    color = PlaceholderGray,
+                    text = if (value.isNotEmpty()) value else placeholderText,
+                    color = if (value.isNotEmpty()) Color.Black else PlaceholderGray, // ⭐ 변경: 값에 따라 글자 색상 변경
                     style = TextStyle(fontSize = 14.sp)
                 )
             }
