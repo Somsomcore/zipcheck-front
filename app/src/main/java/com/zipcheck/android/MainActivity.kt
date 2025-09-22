@@ -33,9 +33,11 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,7 +64,21 @@ class MainActivity : ComponentActivity() {
                             MainScreen(navController = navController)
                         }
                         // Other screen routes
-                        composable("search") {SearchScreen()
+                        composable("search") {
+                            SearchScreen(navController = navController)
+                        }
+                        composable("search_address") {
+                            SearchAddressScreen(navController = navController)
+                        }
+                        composable(
+                            "input_address_detail_screen/{roadAddress}",
+                            arguments = listOf(navArgument("roadAddress") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val roadAddress = backStackEntry.arguments?.getString("roadAddress")
+                            if (roadAddress != null) {
+                                // 여기에서 다음 화면 컴포저블을 호출하고, 주소 데이터를 전달
+                                InputAddressDetailScreen(navController = navController, roadAddress = roadAddress)
+                            }
                         }
                         composable("map") {
                             MapScreen()
