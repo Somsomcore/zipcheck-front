@@ -1,4 +1,4 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +18,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -38,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.Gray
@@ -45,8 +45,6 @@ import com.zipcheck.android.ui.theme.LightBlack
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.OldAddressLabelColor
 import com.zipcheck.android.ui.theme.RoadAddressLabelColor
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun SearchAddressScreen(navController: NavController) {
@@ -80,6 +78,7 @@ fun SearchAddressScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
+
     ) {
         // 상단 바 (뒤로 가기 버튼과 제목)
         Box(
@@ -245,12 +244,19 @@ fun AddressResultItem(
             .fillMaxWidth()
             .padding(top = 12.dp)
             .clickable {
-                // 클릭 시 내비게이션 로직 실행
-                // 1. 도로명 주소를 URL 인코딩하여 특수문자 문제 해결
-                val encodedAddress = URLEncoder.encode(address.roadAddress, StandardCharsets.UTF_8.toString())
+//                // 클릭 시 내비게이션 로직 실행
+//                // 1. 도로명 주소를 URL 인코딩하여 특수문자 문제 해결
+//                val encodedAddress = URLEncoder.encode(address.roadAddress, StandardCharsets.UTF_8.toString())
+//
+//                // 2. 다음 화면으로 이동하며 인코딩된 주소를 인수로 전달
+//                navController.navigate("input_address_detail_screen/$encodedAddress")
+                // 1. 이전 화면으로 전달할 결과를 savedStateHandle에 저장
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("selectedAddress", address.roadAddress)
 
-                // 2. 다음 화면으로 이동하며 인코딩된 주소를 인수로 전달
-                navController.navigate("input_address_detail_screen/$encodedAddress")
+                // 2. 이전 화면으로 돌아가기 (popBackStack)
+                navController.popBackStack()
             }
     ) {
         // Zip code at the top

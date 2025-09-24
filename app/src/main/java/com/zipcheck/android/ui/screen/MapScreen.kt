@@ -1,4 +1,4 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,8 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun FraudHistoryScreen() {
+fun MapScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "사기 이력 화면")
+        Text(text = "탐색 화면")
     }
 }

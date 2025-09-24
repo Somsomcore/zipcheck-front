@@ -1,9 +1,12 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,23 +15,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,8 +52,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
@@ -51,7 +63,9 @@ import com.zipcheck.android.ui.theme.TextFieldBorderGray
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(navController: NavController) {
     // 텍스트 필드에 입력된 값을 저장하는 상태 변수
@@ -65,6 +79,86 @@ fun SearchScreen(navController: NavController) {
 
     // 모든 필드가 채워졌는지 확인하는 변수
     val allFieldsFilled = address.isNotEmpty() && detailAddress.isNotEmpty() && deposit.isNotEmpty() && houseType.isNotEmpty() && area.isNotEmpty()
+
+    // ⭐ 추가/수정: SearchAddressScreen에서 돌아올 때 주소를 받아오는 로직
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("selectedAddress")?.observe(
+            lifecycleOwner
+        ) { result ->
+            address = result
+        }
+    }
+
+    // ModalBottomSheet를 위한 상태 변수들
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // ModalBottomSheet를 먼저 선언합니다.
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            sheetState = sheetState,
+            containerColor = Color.White
+        ) {
+            // 바텀 시트에 표시될 컨텐츠
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 선택 가능한 목록
+                val houseTypes = listOf("아파트", "다세대", "단독주택", "오피스텔", "빌라", "상가")
+
+                // ✅ 표시용 하이라이트: 선택된 값이 있으면 그 값, 없으면 첫 번째 항목
+                val highlighted = houseType ?: houseTypes.first()
+
+                LazyColumn (
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp), // 너무 길어지지 않도록 최대 높이 설정 (선택 사항)
+                    horizontalAlignment = Alignment.CenterHorizontally // LazyColumn 내부 아이템도 중앙 정렬
+                ) {
+                    items(houseTypes.size) { index ->
+                        val type = houseTypes[index]
+
+                        // 선택/비선택 색상
+                        val isSelected = highlighted == type
+                        val textColor = if (isSelected) MainBlue else TextFieldBorderGray // 회색 톤은 원하는 값으로
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    houseType = type // 선택된 값을 houseType에 저장
+                                    scope.launch {
+                                        sheetState.hide()
+                                    }.invokeOnCompletion {
+                                        if (!sheetState.isVisible) {
+                                            showBottomSheet = false // 애니메이션 완료 후 바텀 시트 숨김
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = type,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp, // 폰트 크기 증가
+                                color = textColor // 선택 시 파란색으로 변경
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // 화면 전체를 Column으로 구성
     Column(
@@ -141,6 +235,7 @@ fun SearchScreen(navController: NavController) {
                 // ✅ SearchTextField 대신 ClickableTextField 사용
                 ClickableTextField(
                     label = "매물 주소",
+                    value = address,
                     placeholderText = "지번, 도로명, 건물명으로 검색",
                     leadingIcon = {
                         Icon(
@@ -150,7 +245,6 @@ fun SearchScreen(navController: NavController) {
                         )
                     },
                     onClick = {
-                        focusManager.clearFocus()
                         navController.navigate("search_address")
                     }
                 )
@@ -172,13 +266,29 @@ fun SearchScreen(navController: NavController) {
             )
 
             // 매물 종류
-            SearchTextField(
+//            SearchTextField(
+//                label = "매물 종류",
+//                value = houseType,
+//                onValueChange = { houseType = it },
+//                placeholderText = "아파트/다세대",
+//                trailingIcon = {
+//                    Icon(painterResource(id = R.drawable.ic_dropdown), contentDescription = null, tint = Color.Gray)
+//                }
+//            )
+            ClickableTextField(
                 label = "매물 종류",
-                value = houseType,
-                onValueChange = { houseType = it },
+                value = houseType, // 선택된 값을 표시
                 placeholderText = "아파트/다세대",
+                leadingIcon = null,
+                onClick = {
+                    focusManager.clearFocus()
+                    showBottomSheet = true // 클릭 시 바텀 시트 표시
+                },
                 trailingIcon = {
-                    Icon(painterResource(id = R.drawable.ic_dropdown), contentDescription = null, tint = Color.Gray)
+                    Icon(painterResource(
+                        id = R.drawable.ic_dropdown),
+                        contentDescription = null,
+                        tint = Color.Gray)
                 }
             )
 
@@ -197,7 +307,7 @@ fun SearchScreen(navController: NavController) {
 
         // 다음 버튼
         Button(
-            onClick = { /* 다음 화면으로 이동 로직 */ },
+            onClick = { navController.navigate("search_second") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
@@ -274,15 +384,20 @@ fun SearchTextField(
 @Composable
 fun ClickableTextField(
     label: String? = null,
+    value: String, // ⭐ 추가: 표시할 값 (주소)
     placeholderText: String = "",
     leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
-    // ✅ 포커스 상태를 추적하는 상태 변수
-    var isFocused by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
 
-    // ✅ 포커스 상태에 따라 테두리 색상 결정
-    val borderColor = if (isFocused) MainBlue else TextFieldBorderGray
+    // 누르는 동안만 파란색, 손 떼면 회색으로 복귀 (부드럽게 애니메이션)
+    val borderColor by animateColorAsState(
+        targetValue = if (isPressed) MainBlue else TextFieldBorderGray,
+        label = "borderColor"
+    )
 
     Column {
         Row(
@@ -317,7 +432,6 @@ fun ClickableTextField(
                 )
                 .clickable(
                     onClick = {
-                    isFocused = true
                     onClick()
                 })
                 .padding(horizontal = 16.dp),
@@ -328,15 +442,27 @@ fun ClickableTextField(
                     leadingIcon()
                     Spacer(modifier = Modifier.width(8.dp))
                 }
+
+                // ⭐ 변경: value가 비어있지 않으면 value를, 비어있으면 placeholderText를 표시
                 Text(
-                    text = placeholderText,
-                    color = PlaceholderGray,
+                    text = if (value.isNotEmpty()) value else placeholderText,
+                    color = if (value.isNotEmpty()) Color.Black else PlaceholderGray, // ⭐ 변경: 값에 따라 글자 색상 변경
                     style = TextStyle(fontSize = 14.sp)
                 )
+
+                // This spacer will push the trailing icon to the end.
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (trailingIcon != null) {
+                    trailingIcon()
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
             }
         }
     }
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
