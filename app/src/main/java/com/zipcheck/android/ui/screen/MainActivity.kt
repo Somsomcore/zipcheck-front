@@ -1,4 +1,4 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -38,6 +38,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 
 class MainActivity : ComponentActivity() {
@@ -82,6 +83,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("search_second") {
                             SearchSecondScreen(navController = navController)
+                        }
+                        composable("search_result") {
+                            SearchResultScreen(navController = navController)
                         }
                         composable("map") {
                             MapScreen()

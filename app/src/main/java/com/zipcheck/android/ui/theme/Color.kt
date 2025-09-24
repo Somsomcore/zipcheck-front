@@ -14,12 +14,19 @@ val MainBlue = Color(0xFF448AFF)
 
 val Gray = Color(0xFFE3E5E8)
 val LightBlack = Color(0xFF0B0D0E)
+val DarkBlack = Color(0xFF444C55)
 val Black = Color(0xFF000000)
 val White = Color(0xFFFFFFFF)
 
 val TextFieldBorderGray = Color(0xFFBFC4CA)
 val PlaceholderGray = Color(0xFF757575)
 val ExampleTextGray = Color(0xFF71727A)
+val SectionGray = Color(0xFFF1F2F4)
+
+val CircleBGGray = Color(0xFFEEEEEE)
+val CircleRed = Color(0xFFFF616D)
+val CircleOrange = Color(0xFFFFB37C)
+val CircleGreen = Color(0xFF3AC0A0)
 
 val RoadAddressLabelColor = Color(0xFFEAF2FF)
 val OldAddressLabelColor = Color(0xFFE3E5E8)

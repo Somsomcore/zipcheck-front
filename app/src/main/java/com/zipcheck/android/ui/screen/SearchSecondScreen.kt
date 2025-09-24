@@ -1,4 +1,4 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.TextFieldBorderGray

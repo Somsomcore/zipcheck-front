@@ -1,4 +1,4 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray

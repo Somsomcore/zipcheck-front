@@ -1,4 +1,4 @@
-package com.zipcheck.android
+package com.zipcheck.android.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,12 +18,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.Gray
@@ -46,8 +45,6 @@ import com.zipcheck.android.ui.theme.LightBlack
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.OldAddressLabelColor
 import com.zipcheck.android.ui.theme.RoadAddressLabelColor
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun SearchAddressScreen(navController: NavController) {
