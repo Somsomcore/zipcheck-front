@@ -11,6 +11,7 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 val MainBlue = Color(0xFF448AFF)
+val BackGround = Color(0xFFF5F6F9)
 
 val Gray = Color(0xFFE3E5E8)
 val LightBlack = Color(0xFF0B0D0E)
@@ -22,6 +23,7 @@ val TextFieldBorderGray = Color(0xFFBFC4CA)
 val PlaceholderGray = Color(0xFF757575)
 val ExampleTextGray = Color(0xFF71727A)
 val SectionGray = Color(0xFFF1F2F4)
+val BtNavGray = Color(0xFFAAB2BB)
 
 val CircleBGGray = Color(0xFFEEEEEE)
 val CircleRed = Color(0xFFFF616D)
