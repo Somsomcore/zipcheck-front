@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.TextFieldBorderGray
 
 @Composable
@@ -77,9 +79,21 @@ fun NameInputScreen(navController: NavController) {
             colors = androidx . compose . material3 . OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Black, // 입력 중 텍스트 색상
                 unfocusedTextColor = Black, // 입력 안 할 때 텍스트 색상
-                focusedBorderColor = TextFieldBorderGray, // 포커스 됐을 때 테두리 색상
+                focusedBorderColor = MainBlue, // 포커스 됐을 때 테두리 색상
                 unfocusedBorderColor = TextFieldBorderGray // 포커스 안 됐을 때 테두리 색상
         )
         )
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // 예시 버튼 (실제 앱의 디자인에 맞춰 수정하세요)
+        Button(
+            onClick = {
+                navController.navigate("login_screen_telecom/$name")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = name.isNotBlank() // 이름이 비어있지 않을 때만 활성화
+        ) {
+            Text("다음")
+        }
     }
 }
