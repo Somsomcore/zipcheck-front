@@ -34,12 +34,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.contentColorFor
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.zipcheck.android.R
+import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.PurpleGrey40
+import com.zipcheck.android.ui.theme.PurpleGrey80
 
-// ⚠️ 참고: 실제 프로젝트에서는 이 색상들을 Theme 파일에서 임포트해야 합니다.
-// 여기서는 임시로 제공된 색상 값을 직접 정의합니다.
-
-// Theme.kt 및 Color.kt에서 가져온 색상 정의 (예시)
 private val MainBlue = Color(0xFF448AFF)
 private val LightBlack = Color(0xFF0B0D0E)
 private val DarkBlack = Color(0xFF444C55)
@@ -71,7 +75,7 @@ private val sampleReports = List(4) {
 // --- Composable Functions ---
 
 @Composable
-fun FraudRegInquiryScreen() {
+fun FraudRegInquiryScreen(navController: NavHostController) {
     // 0. State for Tab Selection
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("수락 전", "수락 후")
@@ -106,10 +110,10 @@ fun FraudRegInquiryScreen() {
                 style = androidx.compose.material3.LocalTextStyle.current.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = LightBlack // 폰트 색상: LightBlack (0B0D0E)
+                    color = LightBlack
                 )
             )
-
+            Spacer(modifier = Modifier.height(8.dp))
             // 4. Report List
             ReportList(
                 reports = sampleReports,
@@ -126,8 +130,9 @@ fun FraudInquiryTopBar(title: String) {
         title = {
             Text(
                 text = title,
-                color = LightBlack, // 제목 색상: LightBlack
-                // Typography의 titleLarge 또는 적절한 스타일 사용
+                color = LightBlack,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
                 style = androidx.compose.material3.LocalTextStyle.current.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
@@ -137,11 +142,14 @@ fun FraudInquiryTopBar(title: String) {
         navigationIcon = {
             IconButton(onClick = { /* Handle back button click */ }) {
                 Icon(
-                    Icons.Filled.ArrowBack,
+                    painter = painterResource(id = R.drawable.ic_back),
                     contentDescription = "Back",
-                    tint = LightBlack // 아이콘 색상: LightBlack
+                    modifier = Modifier.size(32.dp)
                 )
             }
+        },
+        actions = {
+            Spacer(modifier = Modifier.width(48.dp))
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = White, // 배경색: White
@@ -210,8 +218,9 @@ fun ReportItem(report: FraudReport) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Handle report item click */ },
-        shape = RoundedCornerShape(10.dp),
+            .clickable { /* Handle report item click */ }
+            .height(210.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = White), // 카드 배경색: White
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -225,25 +234,28 @@ fun ReportItem(report: FraudReport) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "신고자 이름", // Label: 신고자 이름
+                    text = "신고자 이름",
                     style = androidx.compose.material3.LocalTextStyle.current.copy(
-                        color = PlaceholderGray, // 레이블 색상: PlaceholderGray (757575)
+                        color = Black,
                         fontSize = 12.sp
                     )
                 )
 
-                // Date Chip (Gray 배경)
-                Text(
-                    text = report.reportDate,
-                    style = androidx.compose.material3.LocalTextStyle.current.copy(
-                        color = DarkBlack, // 날짜 텍스트 색상: DarkBlack (444C55)
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
+                Box(
                     modifier = Modifier
-                        .background(Gray, shape = RoundedCornerShape(6.dp)) // 배경색: Gray (E3E5E8)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                )
+                        .background(SectionGray, shape = RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = report.reportDate,
+                        style = androidx.compose.material3.LocalTextStyle.current.copy(
+                            color = PurpleGrey80,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             // Reporter Name (Actual Value)
@@ -268,36 +280,28 @@ fun ReportItem(report: FraudReport) {
                         style = androidx.compose.material3.LocalTextStyle.current.copy(color = PlaceholderGray, fontSize = 12.sp)
                     )
                     Text(
-                        text = report.contractDate,
-                        style = androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = FontWeight.SemiBold, color = DarkBlack)
+                        text = "계약 형태",
+                        style = androidx.compose.material3.LocalTextStyle.current.copy(color = PlaceholderGray, fontSize = 12.sp)
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "계약 형태",
-                        style = androidx.compose.material3.LocalTextStyle.current.copy(color = PlaceholderGray, fontSize = 12.sp)
+                        text = report.contractDate,
+                        style = androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = FontWeight.SemiBold, color = DarkBlack, fontSize = 13.sp)
                     )
                     Text(
                         text = report.contractType,
-                        style = androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = FontWeight.SemiBold, color = DarkBlack)
+                        style = androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = FontWeight.SemiBold, color = DarkBlack, fontSize = 13.sp)
                     )
                 }
             }
-
-            Divider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp),
-                color = SectionGray, // 구분선 색상: SectionGray (F1F2F4)
-                thickness = 1.dp
-            )
-
+            Spacer(modifier = Modifier.height(14.dp))
             // Content Preview
             Text(
                 text = report.contentPreview,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                style = androidx.compose.material3.LocalTextStyle.current.copy(color = DarkBlack, fontSize = 14.sp)
+                style = androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = FontWeight.SemiBold,color = DarkBlack, fontSize = 12.sp)
             )
         }
     }
@@ -311,6 +315,6 @@ fun PreviewFraudRegInquiryScreen() {
     // 실제 테마 파일을 적용했다고 가정하고 Preview 실행
     // 여기서는 Material3 기본 테마 내에서 색상을 지정하여 유사하게 구현합니다.
     androidx.compose.material3.MaterialTheme {
-        FraudRegInquiryScreen()
+        FraudRegInquiryScreen(navController = rememberNavController())
     }
 }

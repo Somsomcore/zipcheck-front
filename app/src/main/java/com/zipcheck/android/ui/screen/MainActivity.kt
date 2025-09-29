@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "login_screen", //main_screen
+                        startDestination = "fraud_reg_inquiry", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -78,6 +78,9 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 navController.popBackStack()
                             }
+                        }
+                        composable("fraud_reg_inquiry") {
+                            FraudRegInquiryScreen(navController = navController)
                         }
                         // MainScreen route
                         composable("main_screen") {
