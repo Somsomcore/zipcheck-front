@@ -68,6 +68,17 @@ class MainActivity : ComponentActivity() {
                         composable("login_screen_name") {
                             NameInputScreen(navController = navController)
                         }
+                        composable(
+                            route = "login_screen_telecom/{name}",
+                            arguments = listOf(navArgument("name") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name")
+                            if (name != null) {
+                                CarrierInputScreen(navController = navController, name = name)
+                            } else {
+                                navController.popBackStack()
+                            }
+                        }
                         // MainScreen route
                         composable("main_screen") {
                             MainScreen(navController = navController)
