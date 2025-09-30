@@ -140,7 +140,7 @@ fun FraudInquiryTopBar(title: String) {
             )
         },
         navigationIcon = {
-            IconButton(onClick = { /* Handle back button click */ }) {
+            IconButton(onClick = {  }) { //navController.popBackStack()
                 Icon(
                     painter = painterResource(id = R.drawable.ic_back),
                     contentDescription = "Back",
