@@ -79,12 +79,19 @@ class MainActivity : ComponentActivity() {
                                 navController.popBackStack()
                             }
                         }
-                        composable("fraud_reg_inquiry") {
-                            FraudRegInquiryScreen(navController = navController)
-                        }
                         composable("fraud_reg_inquiry_detail") {
                             FraudRegInquiryDetailScreen(navController = navController)
                         }
+                        composable(
+                            route = "fraudRegInquiry?showPopup={showPopup}",
+                            arguments = listOf(
+                                navArgument("showPopup") { defaultValue = "false" }
+                            )
+                        ) { backStackEntry ->
+                            val showPopup = backStackEntry.arguments?.getString("showPopup") == "true"
+                            FraudRegInquiryScreen(navController, showPopup)
+                        }
+
                         // MainScreen route
                         composable("main_screen") {
                             MainScreen(navController = navController)
