@@ -39,7 +39,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import androidx.compose.ui.draw.clip
-
+import com.zipcheck.android.ui.theme.Black
 
 
 // ⚠️ 이전 파일에서 정의된 색상 및 스타일을 다시 정의하거나 임포트해야 합니다.
@@ -88,6 +88,9 @@ fun FraudRegInquiryDetailScreen(
     // 바텀시트 상태
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(true) }
+    // 상태 값
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showReasonSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { DetailTopBar(navController) } // ✅ 상단 앱바만 Scaffold에 둠
@@ -130,11 +133,205 @@ fun FraudRegInquiryDetailScreen(
 
                         Spacer(Modifier.height(24.dp))
 
-                        // ✅ 하단 버튼도 ModalBottomSheet 안으로 이동
                         BottomActionButtons(
                             onDenyClick = { /* 반려 로직 */ },
-                            onAcceptClick = { /* 수락 로직 */ }
+                            onAcceptClick = { showConfirmDialog = true }
                         )
+                    }
+                }
+                if (showConfirmDialog) {
+                    BasicAlertDialog(
+                        onDismissRequest = { showConfirmDialog = false },
+                        modifier = Modifier.width(300.dp)
+                    ) {
+                        Surface(
+                            // [수정 1] 버튼을 꽉 채우기 위해 하단 모서리를 0.dp로 설정
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+                            color = White,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                // 1. 텍스트 영역 (팝업의 콘텐츠)
+                                Text(
+                                    text = "정말 수락 하시겠습니까?",
+                                    color = Black,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 40.dp, bottom = 40.dp, start = 24.dp, end = 24.dp)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp)
+                                        .padding(top = 1.dp), // 버튼 윗줄에 얇은 구분선처럼 보이도록
+                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
+                                    // 취소 버튼
+                                    Button(
+                                        onClick = { showConfirmDialog = false },
+                                        // 버튼 shape는 0.dp 유지 (Surface 하단 모서리와 일치)
+                                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.White,
+                                            contentColor = Color.Black // 텍스트 색상을 검정색 계열로 변경 (이미지 반영)
+                                        ),
+                                        border = BorderStroke(0.5.dp, Color.LightGray), // 중앙 구분선 역할
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                    ) {
+                                        Text("취소", color = Color.Black)
+                                    }
+
+                                    // 확인 버튼
+                                    Button(
+                                        onClick = {
+                                            showConfirmDialog = false
+                                            showReasonSheet = true
+                                        },
+                                        // 버튼 shape는 0.dp 유지
+                                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MainBlue,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                    ) {
+                                        Text("확인", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (showReasonSheet) {
+                    BasicAlertDialog(
+                        onDismissRequest = { showReasonSheet = false },
+                        modifier = Modifier.width(300.dp)
+                    ) {
+                        Surface(
+                            // [Shape 수정] 다이얼로그 하단 모서리를 0.dp로 설정하여 버튼이 꽉 붙도록 합니다.
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+                            color = White,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+
+                                // 1. Title 영역
+                                Text(
+                                    text = "반려 사유 선택",
+                                    color = Black,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 24.dp, bottom = 12.dp)
+                                        .padding(horizontal = 24.dp), // 좌우 패딩 추가
+                                    textAlign = TextAlign.Center
+                                )
+
+                                // 2. Radio Button List 영역 (스크롤 가능)
+                                val reasons = listOf(
+                                    "근거 자료 신뢰성 및 타당성 미흡", "거짓정보 포함", "욕설/비하/혐오/차별적 표현",
+                                    "스팸홍보/도배", "불법정보 포함", "유출/사칭/사기"
+                                )
+                                var selectedReason by remember { mutableStateOf(reasons[0]) }
+
+                                Column(
+                                    modifier = Modifier
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(horizontal = 24.dp) // 좌우 패딩 추가
+                                ) {
+                                    reasons.forEachIndexed { index, reason ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { selectedReason = reason }
+                                                .padding(vertical = 12.dp) // 패딩 조정
+                                        ) {
+                                            // [수정 2 & 3] RadioButton 대신 Icon 사용
+                                            val isSelected = selectedReason == reason
+                                            Icon(
+                                                painter = painterResource(
+                                                    id = if (isSelected) R.drawable.ic_fraud_select else R.drawable.ic_fraud
+                                                ),
+                                                contentDescription = if (isSelected) "Selected" else "Unselected",
+                                                tint = if (isSelected) Color.Unspecified else Color.LightGray,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+
+                                            Spacer(Modifier.width(16.dp)) // 아이콘과 텍스트 사이 간격
+
+                                            Text(
+                                                reason,
+                                                color = if (isSelected) MainBlue else Black,
+                                                fontWeight = FontWeight.Normal, // 선택된 항목 굵게
+                                                modifier = Modifier.padding(end = 8.dp) // 오른쪽 여백
+                                            )
+                                        }
+
+                                        // [수정 2] Divider 추가 (마지막 항목에는 제외)
+                                        if (index < reasons.size - 1) {
+                                            Divider(color = Color.LightGray, thickness = 0.5.dp)
+                                        }
+                                    }
+                                } // Radio Button List Column 닫기
+
+                                // 3. Button 영역 (하단 꽉 채우기)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp)
+                                        .padding(top = 1.dp), // 버튼 위에 얇은 구분선처럼 보이도록
+                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
+                                    // 취소 버튼 (왼쪽)
+                                    Button(
+                                        onClick = { showReasonSheet = false },
+                                        // [수정 1] 상단 모서리 0.dp, 하단 모서리도 0.dp로 설정하여 꽉 채웁니다.
+                                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.White,
+                                            contentColor = Color.Black
+                                        ),
+                                        // [Border] 취소 버튼의 오른쪽 경계선만 추가 (Divider 역할)
+                                        border = BorderStroke(0.5.dp, Color.LightGray),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                    ) {
+                                        Text("취소", color = Color.Black)
+                                    }
+
+                                    // 확인 버튼 (오른쪽)
+                                    Button(
+                                        onClick = {
+                                            showReasonSheet = false
+                                            navController.navigate("fraudRegInquiry?showPopup=true") {
+                                                launchSingleTop = true
+                                            }
+                                        },
+                                        // [수정 1] 상단 모서리 0.dp, 하단 모서리도 0.dp로 설정하여 꽉 채웁니다.
+                                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MainBlue,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                    ) {
+                                        Text("확인", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -416,8 +613,8 @@ fun EvidenceSection(detail: FraudDetail) {
                     .weight(1f)
                     .height(50.dp),
                 shape = RoundedCornerShape(
-                    topStart = 0.dp, bottomStart = 0.dp, // 왼쪽 모서리 0dp
-                    topEnd = 0.dp, bottomEnd = 0.dp
+                    topStart = 16.dp, bottomStart = 16.dp, // 왼쪽 모서리 0dp
+                    topEnd = 16.dp, bottomEnd = 16.dp
                 ),
                 colors = ButtonDefaults.buttonColors(containerColor = White,       // 배경 흰색
                     contentColor = LightBlack     // 글자색
@@ -433,8 +630,8 @@ fun EvidenceSection(detail: FraudDetail) {
                     .weight(1f)
                     .height(50.dp),
                 shape = RoundedCornerShape(
-                    topStart = 0.dp, bottomStart = 0.dp, // 왼쪽 모서리 0dp
-                    topEnd = 0.dp, bottomEnd = 0.dp
+                    topStart = 16.dp, bottomStart = 16.dp, // 왼쪽 모서리 0dp
+                    topEnd = 16.dp, bottomEnd = 16.dp
                 ),
                 colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
             ) {

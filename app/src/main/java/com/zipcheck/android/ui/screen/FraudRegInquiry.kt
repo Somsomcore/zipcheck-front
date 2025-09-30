@@ -26,6 +26,10 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -51,6 +55,7 @@ private val Gray = Color(0xFFE3E5E8)
 private val PlaceholderGray = Color(0xFF757575)
 private val SectionGray = Color(0xFFF1F2F4)
 private val White = Color(0xFFFFFFFF)
+private val PdfGrey = Color(0xFF8B96A2)
 
 
 // --- Data Structures ---
@@ -75,14 +80,32 @@ private val sampleReports = List(4) {
 // --- Composable Functions ---
 
 @Composable
-fun FraudRegInquiryScreen(navController: NavHostController) {
+fun FraudRegInquiryScreen(navController: NavHostController,
+                          showPopup: Boolean) {
     // 0. State for Tab Selection
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("수락 전", "수락 후")
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(showPopup) {
+        if (showPopup) {
+            snackbarHostState.showSnackbar(
+                message = "사기 접수 요청이 수락되었습니다.",
+
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
     // 1. Scaffold (Material3) for overall screen structure
     Scaffold(
-        topBar = { FraudInquiryTopBar(title = "사기 접수 수락") }
+        topBar = { FraudInquiryTopBar(title = "사기 접수 수락") },
+        snackbarHost = { SnackbarHost(snackbarHostState) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = PdfGrey, // ✅ 배경 회색
+                contentColor = Color.White   // ✅ 텍스트 흰색
+            )
+        }}
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -315,6 +338,6 @@ fun PreviewFraudRegInquiryScreen() {
     // 실제 테마 파일을 적용했다고 가정하고 Preview 실행
     // 여기서는 Material3 기본 테마 내에서 색상을 지정하여 유사하게 구현합니다.
     androidx.compose.material3.MaterialTheme {
-        FraudRegInquiryScreen(navController = rememberNavController())
+        FraudRegInquiryScreen(navController = rememberNavController(), showPopup = false)
     }
 }
