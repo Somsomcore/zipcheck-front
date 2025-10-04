@@ -56,7 +56,6 @@ import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             ZipcheckfrontTheme {
                 val navController = rememberNavController()
@@ -211,7 +210,7 @@ fun MainScreen(
             .fillMaxSize()
         // ✅ 수직 스크롤 가능하게 만들 경우: .verticalScroll(rememberScrollState())
     ) {
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(16.dp))
 
         Box(
             modifier = Modifier
@@ -266,7 +265,7 @@ fun MainScreen(
                         contentDescription = "House",
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .size(300.dp),
+                            .padding(end = 24.dp, bottom = 36.dp),
                         contentScale = ContentScale.Fit
                     )
 
