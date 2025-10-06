@@ -24,6 +24,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.CircleBGGray
@@ -50,143 +52,126 @@ import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
+import com.zipcheck.android.ui.theme.White
 
 @Composable
-fun SearchResultScreen(navController: NavController) {
+fun SearchResultScreen(navController: NavHostController) {
 
     val scrollState = rememberScrollState()
 
-    // 화면 전체를 Column으로 구성
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState),
-    ) {
+    Scaffold(
+        containerColor = White,
+        topBar = {
+            CustomTopBar("분석 결과", navController)
+        }
+    ) { innerPadding ->
+        // 화면 전체를 Column으로 구성
         Column(
             modifier = Modifier
-                .padding(horizontal = 16.dp),
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(scrollState),
         ) {
-            // 상단 바 (뒤로 가기 버튼과 제목)
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 16.dp),
             ) {
-                // 뒤로 가기 버튼
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_back),
-                    contentDescription = "Back",
+                // ✅ LinearProgressIndicator 추가
+                LinearProgressIndicator(
+                    progress = 3f / 3f, // 세 번째 화면이므로 100% 진행률
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .size(24.dp)
-                        .padding(start = 4.dp)
-                        .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
+                        .fillMaxWidth()
+                        .height(5.dp),
+                    color = MainBlue, // 파란색
+                    trackColor = Gray // 배경색
                 )
-                // 화면 제목
+
+                Spacer(modifier = Modifier.height(24.dp)) // 두 줄 사이 간격
+
+                // "아주 위험" 텍스트와 설명
                 Text(
-                    text = "분석 결과",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = buildAnnotatedString {
+                        append("해당 매물의 위험도는 ")
+                        withStyle(
+                            style = SpanStyle(
+                                color = CircleRed,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("아주 위험")
+                        }
+                        append(" 입니다")
+                    },
+                    fontSize = 16.sp,
+                    color = Black
                 )
+
+                Spacer(modifier = Modifier.height(2.dp)) // 두 줄 사이 간격
+
+                // 두 번째 줄: "동일 면적·거래가 매물 대비 보증금이 10% 높습니다."
+                // 일부 텍스트에만 빨간색과 굵은 글씨체 적용
+                Text(
+                    text = buildAnnotatedString {
+                        append("동일 면적·거래가 매물 대비 보증금이 ")
+                        withStyle(
+                            style = SpanStyle(
+                                color = CircleRed,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("10%")
+                        }
+                        append(" 높습니다")
+                    },
+                    fontSize = 14.sp,
+                    color = DarkBlack
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 위험도 섹션
+                RiskLevelSection()
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // 최우선 변제 금액 섹션
+                PriorityRepaymentSection()
             }
 
-            // ✅ LinearProgressIndicator 추가
-            LinearProgressIndicator(
-                progress = 3f / 3f, // 세 번째 화면이므로 100% 진행률
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Divider(
+                modifier = Modifier.padding(vertical = 32.dp),
+                color = SectionGray,
+                thickness = 12.dp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp),
-                color = MainBlue, // 파란색
-                trackColor = Gray // 배경색
-            )
+                    .padding(horizontal = 16.dp)
+            ) {
+                // "어떤 기준으로 전세 사기를 진단했나요?" 섹션
+                Text(
+                    text = "Q. 어떤 기준으로 \n\t전세 사기를 진단했나요?",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
 
-            Spacer(modifier = Modifier.height(24.dp)) // 두 줄 사이 간격
+                // 동면적/동거래 매물 대비 섹션
+                ComparisonSection()
 
-            // "아주 위험" 텍스트와 설명
-            Text(
-                text = buildAnnotatedString {
-                    append("해당 매물의 위험도는 ")
-                    withStyle(
-                        style = SpanStyle(
-                            color = CircleRed,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append("아주 위험")
-                    }
-                    append(" 입니다")
-                },
-                fontSize = 16.sp,
-                color = Black
-            )
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(2.dp)) // 두 줄 사이 간격
-
-            // 두 번째 줄: "동일 면적·거래가 매물 대비 보증금이 10% 높습니다."
-            // 일부 텍스트에만 빨간색과 굵은 글씨체 적용
-            Text(
-                text = buildAnnotatedString {
-                    append("동일 면적·거래가 매물 대비 보증금이 ")
-                    withStyle(
-                        style = SpanStyle(
-                            color = CircleRed,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append("10%")
-                    }
-                    append(" 높습니다")
-                },
-                fontSize = 14.sp,
-                color = DarkBlack
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 위험도 섹션
-            RiskLevelSection()
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 최우선 변제 금액 섹션
-            PriorityRepaymentSection()
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Divider(
-            modifier = Modifier.padding(vertical = 32.dp),
-            color = SectionGray,
-            thickness = 12.dp
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-        ) {
-            // "어떤 기준으로 전세 사기를 진단했나요?" 섹션
-            Text(
-                text = "Q. 어떤 기준으로 \n\t전세 사기를 진단했나요?",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            // 동면적/동거래 매물 대비 섹션
-            ComparisonSection()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "*본 플랫폼은 전세사기 예방을 위한 정보 제공만을 목적으로 하며, 법적 책임을 부담하지 않습니다. \n" +
-                        " 계약 체결 전에는 반드시 전문가의 확인을 권장하며, 정보 이용에 따른 모든 책임은 이용자 본인에게 있습니다.",
-                fontSize = 8.sp,
-                color = PlaceholderGray
-            )
+                Text(
+                    text = "*본 플랫폼은 전세사기 예방을 위한 정보 제공만을 목적으로 하며, 법적 책임을 부담하지 않습니다. \n" +
+                            " 계약 체결 전에는 반드시 전문가의 확인을 권장하며, 정보 이용에 따른 모든 책임은 이용자 본인에게 있습니다.",
+                    fontSize = 8.sp,
+                    color = PlaceholderGray
+                )
+            }
         }
     }
 }
