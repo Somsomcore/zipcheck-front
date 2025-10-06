@@ -94,11 +94,43 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "main_screen",
+                        startDestination = "fraud_reg_inquiry_detail", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
                     ) {
+                        //LoginScreen route
+                        composable("login_screen") {
+                            LoginScreen(navController = navController)
+                        }
+                        //LoginScreen_name route
+                        composable("login_screen_name") {
+                            NameInputScreen(navController = navController)
+                        }
+                        composable(
+                            route = "login_screen_telecom/{name}",
+                            arguments = listOf(navArgument("name") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name")
+                            if (name != null) {
+                                CarrierInputScreen(navController = navController, name = name)
+                            } else {
+                                navController.popBackStack()
+                            }
+                        }
+                        composable("fraud_reg_inquiry_detail") {
+                            FraudRegInquiryDetailScreen(navController = navController)
+                        }
+                        composable(
+                            route = "fraudRegInquiry?showPopup={showPopup}",
+                            arguments = listOf(
+                                navArgument("showPopup") { defaultValue = "false" }
+                            )
+                        ) { backStackEntry ->
+                            val showPopup = backStackEntry.arguments?.getString("showPopup") == "true"
+                            FraudRegInquiryScreen(navController, showPopup)
+                        }
+
                         // MainScreen route
                         composable("main_screen") {
                             LaunchedEffect(Unit) {
