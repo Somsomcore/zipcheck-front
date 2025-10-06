@@ -199,6 +199,9 @@ fun SearchTextField(
                 color = Gray
             )
         },
+        textStyle =  MaterialTheme.typography.bodyMedium.copy(
+            color = Black
+        ),
         // The magnifying glass icon on the right
         trailingIcon = {
             Icon(

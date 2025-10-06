@@ -10,6 +10,7 @@ import android.location.LocationManager
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,10 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,12 +36,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -51,11 +62,18 @@ import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.White
 import java.lang.Exception
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(navController: NavHostController) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+
     // 1. MapView 인스턴스를 remember로 유지
     val mapView = remember {
         MapView(context)
@@ -70,6 +88,8 @@ fun MapScreen(navController: NavHostController) {
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
     )
+
+    var query by remember { mutableStateOf("") }
 
     // 1) 최초 진입 시(또는 해당 화면 재진입 시) 안전하게 권한 요청
     LaunchedEffect(perms.permissions) {
@@ -94,6 +114,25 @@ fun MapScreen(navController: NavHostController) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { mapView } // MapView 인스턴스 반환
+            )
+
+            SearchBarOverlay(
+                query = query,
+                onQueryChange = { query = it },
+                onSearch = {
+                    // TODO: 여기서 카카오 장소검색/지오코딩 호출 후
+                    // 결과 좌표로 map.moveCamera(...) 하면 끝!
+                },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(0.88f)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .pointerInput(Unit) {
+                        // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
+                        detectTapGestures(onTap = {
+                            focusManager.clearFocus()
+                        })
+                    }
             )
 
             // 2. DisposableEffect로 MapView 생명주기 관리
@@ -184,7 +223,7 @@ fun CustomTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .padding(vertical = 8.dp)
+            .padding(vertical = 16.dp)
             .background(White),
         contentAlignment = Alignment.Center
     ) {
@@ -206,4 +245,58 @@ fun CustomTopBar(
             color = Black
         )
     }
+}
+
+@Composable
+private fun SearchBarOverlay(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        singleLine = true,
+        modifier = modifier
+            .height(48.dp)
+            .background(
+                color = White.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(24.dp)
+            )
+            .shadow(6.dp, RoundedCornerShape(24.dp)),
+        textStyle =  MaterialTheme.typography.bodyMedium.copy(
+            fontSize = 14.sp,
+            color = Black
+        ),
+        shape = RoundedCornerShape(24.dp),
+        // 필요 시 Material Icons 대신 벡터 에셋 사용
+        leadingIcon = {
+            Icon(
+                painterResource(id = R.drawable.ic_home_search),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                Icon(
+                    painterResource(id = R.drawable.ic_clear),
+                    contentDescription = "지우기",
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable { onQueryChange("") }
+                )
+            }
+        },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            disabledContainerColor = Color.White,
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent
+        )
+    )
 }

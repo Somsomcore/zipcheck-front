@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
@@ -49,7 +51,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchSecondScreen(navController: NavController) {
+fun SearchSecondScreen(navController: NavHostController) {
     var floor by remember { mutableStateOf("") }
 
     var houseYear by remember { mutableStateOf("") }
@@ -126,112 +128,101 @@ fun SearchSecondScreen(navController: NavController) {
         }
     }
 
-    // 화면 전체를 Column으로 구성
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .pointerInput(Unit) {
-                // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
-                detectTapGestures(onTap = {
-                    focusManager.clearFocus()
-                })
-            },
-    ) {
-        // 상단 바 (뒤로 가기 버튼과 제목)
-        Box(
+    Scaffold(
+        containerColor = White,
+        topBar = {
+            CustomTopBar("위험도 조회", navController)
+        }
+    ) { innerPadding ->
+        // 화면 전체를 Column으로 구성
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .pointerInput(Unit) {
+                    // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                },
         ) {
-            // 뒤로 가기 버튼
-            Icon(
-                painter = painterResource(id = R.drawable.ic_back),
-                contentDescription = "Back",
+            // ✅ LinearProgressIndicator 추가
+            LinearProgressIndicator(
+                progress = 2f / 3f, // 첫 번째 화면이므로 33% 진행률
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(24.dp)
-                    .padding(start = 4.dp)
-                    .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
+                    .fillMaxWidth()
+                    .height(5.dp),
+                color = MainBlue, // 파란색
+                trackColor = Gray // 배경색
             )
-            // 화면 제목
-            Text(
-                text = "위험도 조회",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+
+            // 필수 정보 섹션
+            Column(modifier = Modifier.padding(top = 16.dp)) {
+                Text(
+                    text = "선택 정보",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "입력 시 평가 위험도의 정확도가 높아져요.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            SearchTextField(
+                label = "층수",
+                value = floor,
+                onValueChange = { floor = it },
+                trailingIcon = { Text(text = "층", color = Color.Gray) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-        }
 
-        // ✅ LinearProgressIndicator 추가
-        LinearProgressIndicator(
-            progress = 2f / 3f, // 첫 번째 화면이므로 33% 진행률
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(5.dp),
-            color = MainBlue, // 파란색
-            trackColor = Gray // 배경색
-        )
+            Spacer(modifier = Modifier.padding(16.dp))
 
-        // 필수 정보 섹션
-        Column(modifier = Modifier.padding(top = 16.dp)) {
-            Text(
-                text = "선택 정보",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            ClickableTextField(
+                label = "건축 년도",
+                value = houseYear, // 선택된 값을 표시
+                placeholderText = "",
+                leadingIcon = null,
+                onClick = {
+                    focusManager.clearFocus()
+                    showBottomSheet = true // 클릭 시 바텀 시트 표시
+                },
+                trailingIcon = { Text(text = "년", color = Color.Gray) }
             )
-            Text(
-                text = "입력 시 평가 위험도의 정확도가 높아져요.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
 
-        SearchTextField(
-            label = "층수",
-            value = floor,
-            onValueChange = { floor = it },
-            trailingIcon = { Text(text = "층", color = Color.Gray) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
+            // ✅ 하단 버튼을 위로 밀어내는 Spacer
+            Spacer(modifier = Modifier.weight(1f))
 
-        Spacer(modifier = Modifier.padding(16.dp))
-
-        ClickableTextField(
-            label = "건축 년도",
-            value = houseYear, // 선택된 값을 표시
-            placeholderText = "",
-            leadingIcon = null,
-            onClick = {
-                focusManager.clearFocus()
-                showBottomSheet = true // 클릭 시 바텀 시트 표시
-            },
-            trailingIcon = { Text(text = "년", color = Color.Gray) }
-        )
-
-        // ✅ 하단 버튼을 위로 밀어내는 Spacer
-        Spacer(modifier = Modifier.weight(1f))
-
-        // 다음 버튼
-        Button(
-            onClick = { /* 다음 화면으로 이동 로직 */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MainBlue,
-                disabledContainerColor = Gray
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                text = "다음",
-                color = White,
-                fontSize = 18.sp
-            )
+            // 다음 버튼
+            Button(
+                onClick = {  navController.navigate("search_result") {
+                    popUpTo("main_screen") {
+                        inclusive = false
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                } },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(bottom = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MainBlue,
+                    disabledContainerColor = Gray
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "다음",
+                    color = White,
+                    fontSize = 18.sp
+                )
+            }
         }
     }
 }

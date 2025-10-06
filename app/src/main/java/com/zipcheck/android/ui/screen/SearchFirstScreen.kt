@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.Black
@@ -67,7 +69,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(navController: NavController) {
+fun SearchScreen(navController: NavHostController) {
     // 텍스트 필드에 입력된 값을 저장하는 상태 변수
     var address by remember { mutableStateOf("") }
     var detailAddress by remember { mutableStateOf("") } // 상세 주소 추가
@@ -161,111 +163,92 @@ fun SearchScreen(navController: NavController) {
     }
 
     // 화면 전체를 Column으로 구성
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .pointerInput(Unit) {
-                // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
-                detectTapGestures(onTap = {
-                    focusManager.clearFocus()
-                })
-            },
-    ) {
-        // 상단 바 (뒤로 가기 버튼과 제목)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // 뒤로 가기 버튼
-            Icon(
-                painter = painterResource(id = R.drawable.ic_back),
-                contentDescription = "Back",
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(24.dp)
-                    .padding(start = 4.dp)
-                    .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
-            )
-            // 화면 제목
-            Text(
-                text = "위험도 조회",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+    Scaffold(
+        containerColor = White,
+        topBar = {
+            CustomTopBar("위험도 조회", navController)
         }
-
-        // ✅ LinearProgressIndicator 추가
-        LinearProgressIndicator(
-            progress = 1f / 3f, // 첫 번째 화면이므로 33% 진행률
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(5.dp),
-            color = MainBlue, // 파란색
-            trackColor = Gray // 배경색
-        )
-
-        // 필수 정보 섹션
-        Column(modifier = Modifier.padding(top = 16.dp)) {
-            Text(
-                text = "필수 정보",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "매물 위험도 평가를 위한 정보를 입력해주세요.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // 입력 필드 섹션
+    ) { innerPadding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .pointerInput(Unit) {
+                    // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                },
         ) {
-            // ✅ 매물 주소와 상세 주소 그룹화
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // ✅ SearchTextField 대신 ClickableTextField 사용
-                ClickableTextField(
-                    label = "매물 주소",
-                    value = address,
-                    placeholderText = "지번, 도로명, 건물명으로 검색",
-                    leadingIcon = {
-                        Icon(
-                            painterResource(id = R.drawable.ic_location),
-                            contentDescription = null,
-                            tint = Color.Gray
-                        )
-                    },
-                    onClick = {
-                        navController.navigate("search_address")
-                    }
-                )
-
-                SearchTextField(
-                    value = detailAddress,
-                    onValueChange = { detailAddress = it },
-                    placeholderText = "상세주소를 입력하세요"
-                )
-            }
-
-            // 거래 희망 보증금
-            SearchTextField(
-                label = "거래 희망 보증금",
-                value = deposit,
-                onValueChange = { deposit = it },
-                trailingIcon = { Text(text = "만 원", color = Color.Gray) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            // ✅ LinearProgressIndicator 추가
+            LinearProgressIndicator(
+                progress = 1f / 3f, // 첫 번째 화면이므로 33% 진행률
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp),
+                color = MainBlue, // 파란색
+                trackColor = Gray // 배경색
             )
 
-            // 매물 종류
+            // 필수 정보 섹션
+            Column(modifier = Modifier.padding(top = 16.dp)) {
+                Text(
+                    text = "필수 정보",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "매물 위험도 평가를 위한 정보를 입력해주세요.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // 입력 필드 섹션
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // ✅ 매물 주소와 상세 주소 그룹화
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // ✅ SearchTextField 대신 ClickableTextField 사용
+                    ClickableTextField(
+                        label = "매물 주소",
+                        value = address,
+                        placeholderText = "지번, 도로명, 건물명으로 검색",
+                        leadingIcon = {
+                            Icon(
+                                painterResource(id = R.drawable.ic_location),
+                                contentDescription = null,
+                                tint = Color.Gray
+                            )
+                        },
+                        onClick = {
+                            navController.navigate("search_address")
+                        }
+                    )
+
+                    SearchTextField(
+                        value = detailAddress,
+                        onValueChange = { detailAddress = it },
+                        placeholderText = "상세주소를 입력하세요"
+                    )
+                }
+
+                // 거래 희망 보증금
+                SearchTextField(
+                    label = "거래 희망 보증금",
+                    value = deposit,
+                    onValueChange = { deposit = it },
+                    trailingIcon = { Text(text = "만 원", color = Color.Gray) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                // 매물 종류
 //            SearchTextField(
 //                label = "매물 종류",
 //                value = houseType,
@@ -275,54 +258,58 @@ fun SearchScreen(navController: NavController) {
 //                    Icon(painterResource(id = R.drawable.ic_dropdown), contentDescription = null, tint = Color.Gray)
 //                }
 //            )
-            ClickableTextField(
-                label = "매물 종류",
-                value = houseType, // 선택된 값을 표시
-                placeholderText = "아파트/다세대",
-                leadingIcon = null,
-                onClick = {
-                    focusManager.clearFocus()
-                    showBottomSheet = true // 클릭 시 바텀 시트 표시
-                },
-                trailingIcon = {
-                    Icon(painterResource(
-                        id = R.drawable.ic_dropdown),
-                        contentDescription = null,
-                        tint = Color.Gray)
-                }
-            )
+                ClickableTextField(
+                    label = "매물 종류",
+                    value = houseType, // 선택된 값을 표시
+                    placeholderText = "아파트/다세대",
+                    leadingIcon = null,
+                    onClick = {
+                        focusManager.clearFocus()
+                        showBottomSheet = true // 클릭 시 바텀 시트 표시
+                    },
+                    trailingIcon = {
+                        Icon(
+                            painterResource(
+                                id = R.drawable.ic_dropdown
+                            ),
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
+                    }
+                )
 
-            // 전용 면적
-            SearchTextField(
-                label = "전용 면적",
-                value = area,
-                onValueChange = { area = it },
-                trailingIcon = { Text(text = "m²", color = Color.Gray) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-        }
+                // 전용 면적
+                SearchTextField(
+                    label = "전용 면적",
+                    value = area,
+                    onValueChange = { area = it },
+                    trailingIcon = { Text(text = "m²", color = Color.Gray) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
 
-        // ✅ 하단 버튼을 위로 밀어내는 Spacer
-        Spacer(modifier = Modifier.weight(1f))
+            // ✅ 하단 버튼을 위로 밀어내는 Spacer
+            Spacer(modifier = Modifier.weight(1f))
 
-        // 다음 버튼
-        Button(
-            onClick = { navController.navigate("search_second") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (allFieldsFilled) MainBlue else Gray,
-                disabledContainerColor = Gray
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                text = "다음",
-                color = if (allFieldsFilled) White else Black,
-                fontSize = 18.sp
-            )
+            // 다음 버튼
+            Button(
+                onClick = { navController.navigate("search_second") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(bottom = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (allFieldsFilled) MainBlue else Gray,
+                    disabledContainerColor = Gray
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "다음",
+                    color = if (allFieldsFilled) White else Black,
+                    fontSize = 18.sp
+                )
+            }
         }
     }
 }
@@ -363,7 +350,7 @@ fun SearchTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(fontSize = 14.sp),
+            textStyle = TextStyle(fontSize = 14.sp, color = Black),
             shape = RoundedCornerShape(8.dp), // 둥근 모서리
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
