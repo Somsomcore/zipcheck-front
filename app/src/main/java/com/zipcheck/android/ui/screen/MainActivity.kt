@@ -3,7 +3,6 @@ package com.zipcheck.android.ui.screen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -16,10 +15,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,10 +49,27 @@ import com.zipcheck.android.ui.theme.BtNavGray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
+import android.content.pm.PackageManager
+import android.util.Base64
+import android.util.Log
+import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        try {
+//            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+//            for (signature in info.signatures!!) {
+//                val md: MessageDigest = MessageDigest.getInstance("SHA")
+//                md.update(signature.toByteArray())
+//                val keyHash = String(Base64.encode(md.digest(), Base64.NO_WRAP))
+//                Log.d("KeyHash", "키 해시: $keyHash")
+//            }
+//        } catch (e: Exception) {
+//            Log.e("KeyHash", "키 해시 얻기 실패", e)
+//        }
+
         setContent {
             ZipcheckfrontTheme {
                 val navController = rememberNavController()
