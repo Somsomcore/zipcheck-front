@@ -52,6 +52,9 @@ import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.content.pm.PackageManager
 import android.util.Base64
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
@@ -73,11 +76,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             ZipcheckfrontTheme {
                 val navController = rememberNavController()
+                val showBottomBar = rememberSaveable { mutableStateOf(true) }
+
                 Scaffold(
                     containerColor = White,   // 배경 흰색
                     contentColor = Color.Black,
                     bottomBar = {
-                        BottomNavigationBar(navController = navController)
+                        if (showBottomBar.value) {
+                            BottomNavigationBar(navController = navController)
+                        }
                     }
                 ) { innerPadding ->
                     // NavController로 화면 전환 설정
@@ -90,13 +97,22 @@ class MainActivity : ComponentActivity() {
                     ) {
                         // MainScreen route
                         composable("main_screen") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = true
+                            }
                             MainScreen(navController = navController)
                         }
                         // Other screen routes
                         composable("search") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             SearchScreen(navController = navController)
                         }
                         composable("search_address") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             SearchAddressScreen(navController = navController)
                         }
                         composable(
@@ -110,18 +126,33 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable("search_second") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             SearchSecondScreen(navController = navController)
                         }
                         composable("search_result") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             SearchResultScreen(navController = navController)
                         }
                         composable("map") {
-                            MapScreen()
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+                            MapScreen(navController = navController)
                         }
                         composable("fraud_history") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = true
+                            }
                             FraudHistoryScreen()
                         }
                         composable("register") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = true
+                            }
                             RegisterScreen()
                         }
                     }
