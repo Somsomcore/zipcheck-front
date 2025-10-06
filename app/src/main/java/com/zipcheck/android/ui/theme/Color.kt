@@ -12,6 +12,8 @@ val Pink40 = Color(0xFF7D5260)
 
 val MainBlue = Color(0xFF448AFF)
 val BackGround = Color(0xFFF5F6F9)
+val HomeBGLinear0 = Color(0xFF7AA2F8)
+val HomeBGLinear1 = Color(0xFFC1D8FF)
 
 val Gray = Color(0xFFE3E5E8)
 val LightBlack = Color(0xFF0B0D0E)

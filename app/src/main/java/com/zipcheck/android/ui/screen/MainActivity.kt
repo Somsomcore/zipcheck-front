@@ -52,9 +52,13 @@ import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.content.pm.PackageManager
 import android.util.Base64
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Brush
+import com.zipcheck.android.ui.theme.HomeBGLinear0
+import com.zipcheck.android.ui.theme.HomeBGLinear1
 import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
@@ -168,6 +172,9 @@ fun MainScreen(
     modifier: Modifier = Modifier
 
 ) {
+    val homeBGLinear0 = HomeBGLinear0
+    val homeBGLinear1 = HomeBGLinear1
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -186,11 +193,16 @@ fun MainScreen(
                     .fillMaxWidth()
                     .height(300.dp),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF3B568B)),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 // Row 대신 Box로 배치 자유도 확보
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.horizontalGradient(listOf(homeBGLinear0, homeBGLinear1))
+                    )
+                ) {
 
                     // 좌측 텍스트
                     Column(
@@ -243,12 +255,9 @@ fun MainScreen(
                                 interactionSource = interaction,
                                 indication = null
                             ) { /* TODO: 알림 화면 이동 */ },
-                        shape = RoundedCornerShape(10.dp),         // 둥근 사각
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF4F6597)     // 배너색보다 살짝 밝은 파랑 (배경)
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)) // 미묘한 테두리(선택)
+                            containerColor = Color.Transparent
+                        )
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -257,8 +266,8 @@ fun MainScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_noti),
                                 contentDescription = "Notification",
-                                tint = Color.White,                 // 아이콘 흰색
-                                modifier = Modifier.size(24.dp)
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(40.dp)
                             )
                         }
                     }
@@ -276,36 +285,11 @@ fun MainScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "피해 신고 집중 접수 주소지 TOP : ",
+                    "피해 신고 집중 접수 주소지 TOP",
                     style = MaterialTheme.typography.titleSmall,
                     color = Color.Black
                 )
-                // K/지 아이콘/텍스트 (Placeholder)
-                Card(
-                    shape = RoundedCornerShape(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFC8E6C9)), // 연두색 배경
-                    border = BorderStroke(1.dp, Color(0xFF4CAF50)) // 녹색 테두리
-                ) {
-                    Text(
-                        "K",
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        color = Color(0xFF4CAF50), // 녹색 텍스트
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-                Spacer(Modifier.size(4.dp))
-                Card(
-                    shape = RoundedCornerShape(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFCCBC)), // 살구색 배경
-                    border = BorderStroke(1.dp, Color(0xFFF44336)) // 빨간색 테두리
-                ) {
-                    Text(
-                        "지",
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        color = Color(0xFFF44336), // 빨간색 텍스트
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
+
             }
 
             Spacer(Modifier.height(8.dp))
