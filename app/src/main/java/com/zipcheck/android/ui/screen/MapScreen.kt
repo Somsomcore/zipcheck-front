@@ -67,6 +67,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
+import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.SearchBarOverlay
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -212,91 +214,4 @@ fun MapScreen(navController: NavHostController) {
             }
         }
     }
-}
-
-@Composable
-fun CustomTopBar(
-    title: String = "",
-    navController: NavHostController,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(vertical = 16.dp)
-            .background(White),
-        contentAlignment = Alignment.Center
-    ) {
-        // 뒤로 가기 버튼
-        Icon(
-            painter = painterResource(id = R.drawable.ic_back),
-            contentDescription = "Back",
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(24.dp)
-                .padding(start = 4.dp)
-                .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
-        )
-        // 화면 제목
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Black
-        )
-    }
-}
-
-@Composable
-private fun SearchBarOverlay(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        singleLine = true,
-        modifier = modifier
-            .height(48.dp)
-            .background(
-                color = White.copy(alpha = 0.95f),
-                shape = RoundedCornerShape(24.dp)
-            )
-            .shadow(6.dp, RoundedCornerShape(24.dp)),
-        textStyle =  MaterialTheme.typography.bodyMedium.copy(
-            fontSize = 14.sp,
-            color = Black
-        ),
-        shape = RoundedCornerShape(24.dp),
-        // 필요 시 Material Icons 대신 벡터 에셋 사용
-        leadingIcon = {
-            Icon(
-                painterResource(id = R.drawable.ic_home_search),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                Icon(
-                    painterResource(id = R.drawable.ic_clear),
-                    contentDescription = "지우기",
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onQueryChange("") }
-                )
-            }
-        },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            disabledContainerColor = Color.White,
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent
-        )
-    )
 }

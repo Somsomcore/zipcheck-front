@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.zipcheck.android.R
+import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.TextFieldBorderGray
