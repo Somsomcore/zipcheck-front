@@ -140,6 +140,7 @@ fun TopReportsCarousel(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight(),
+        pageSpacing = 12.dp,
         beyondViewportPageCount = 0
     ) { page ->
         ReportCard(
