@@ -2,8 +2,6 @@ package com.zipcheck.android.ui.screen
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +21,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,11 +36,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.zipcheck.android.R
+import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.CircleBGGray
 import com.zipcheck.android.ui.theme.CircleRed
@@ -130,7 +128,12 @@ fun SearchResultScreen(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // 위험도 섹션
-                RiskLevelSection()
+                RiskLevelSection(
+                    circleSize = 200.dp,
+                    strokeWidth = 25.dp,
+                    fontSize = 48,
+                    riskColor = CircleRed
+                )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -177,7 +180,12 @@ fun SearchResultScreen(navController: NavHostController) {
 }
 
 @Composable
-fun RiskLevelSection() {
+fun RiskLevelSection(
+    circleSize: Dp,
+    strokeWidth: Dp,
+    fontSize: Int,
+    riskColor: Color
+) {
     // 원형 그래프와 텍스트를 겹쳐서 배치
     Column(
         modifier = Modifier
@@ -185,12 +193,12 @@ fun RiskLevelSection() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.size(200.dp),
+            modifier = Modifier.size(circleSize),
             contentAlignment = Alignment.Center
         ) {
             // 원형 그래프 (Canvas)
             Canvas(modifier = Modifier.size(150.dp)) {
-                val strokeWidth = 25.dp.toPx()
+                val strokeWidth = strokeWidth.toPx()
                 // 배경 원
                 drawCircle(
                     color = CircleBGGray,
@@ -198,7 +206,7 @@ fun RiskLevelSection() {
                 )
                 // 88% 진행 원호
                 drawArc(
-                    color = CircleRed,
+                    color = riskColor,
                     startAngle = -90f,
                     sweepAngle = 360f * 0.88f,
                     useCenter = false,
@@ -209,7 +217,7 @@ fun RiskLevelSection() {
             // 중앙의 88% 텍스트
             Text(
                 text = "88%",
-                fontSize = 48.sp,
+                fontSize = fontSize.sp,
                 fontWeight = FontWeight.Bold,
                 color = CircleRed
             )

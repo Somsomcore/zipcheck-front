@@ -58,6 +58,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
+import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
@@ -293,7 +294,7 @@ fun SearchScreen(navController: NavHostController) {
 
             // 다음 버튼
             Button(
-                onClick = { navController.navigate("search_second") },
+                onClick = { if (allFieldsFilled) navController.navigate("search_second") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)

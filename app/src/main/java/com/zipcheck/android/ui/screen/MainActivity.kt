@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import android.R.id.tabs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -50,18 +51,41 @@ import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.zIndex
+import com.zipcheck.android.data.RiskAnalysis.RiskAnalysisResult
+import com.zipcheck.android.ui.component.BottomNavItem
+import com.zipcheck.android.ui.component.BottomNavigationBar
+import com.zipcheck.android.ui.component.RiskAnalysisList
+import com.zipcheck.android.ui.component.SearchBarOverlay
+import com.zipcheck.android.ui.component.TopReportsCarousel
+import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -138,6 +162,19 @@ class MainActivity : ComponentActivity() {
                             }
                             MainScreen(navController = navController)
                         }
+                        composable("risk_analysis_record") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+                            RiskAnalysisRecordScreen(navController = navController)
+                        }
+                        composable("risk_analysis_result") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+                            RiskAnalysisResultScreen(navController = navController)
+                        }
+
                         // Other screen routes
                         composable("search") {
                             LaunchedEffect(Unit) {
@@ -191,6 +228,12 @@ class MainActivity : ComponentActivity() {
                             }
                             RegisterScreen()
                         }
+                        composable("my_page") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = true
+                            }
+                            MyPageScreen(navController = navController)
+                        }
                     }
                 }
             }
@@ -198,6 +241,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(
     navController: NavHostController,
@@ -207,10 +251,19 @@ fun MainScreen(
     val homeBGLinear0 = HomeBGLinear0
     val homeBGLinear1 = HomeBGLinear1
 
+    var query by remember { mutableStateOf("") }
+
+    val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
+
+    val tabs = listOf("아파트", "오피스텔", "빌라")
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
+
     Column(
         modifier = modifier
             .fillMaxSize()
-        // ✅ 수직 스크롤 가능하게 만들 경우: .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
     ) {
         Spacer(Modifier.height(16.dp))
 
@@ -223,7 +276,7 @@ fun MainScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(230.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(4.dp)
@@ -240,7 +293,7 @@ fun MainScreen(
                     Column(
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(start = 20.dp, top = 60.dp, end = 20.dp),
+                            .padding(start = 20.dp, top = 56.dp, end = 20.dp),
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
@@ -272,7 +325,8 @@ fun MainScreen(
                         contentDescription = "House",
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(end = 24.dp, bottom = 36.dp),
+                            .padding(bottom = 24.dp)
+                            .size(140.dp),
                         contentScale = ContentScale.Fit
                     )
 
@@ -305,9 +359,45 @@ fun MainScreen(
                     }
                 }
             }
+
+            SearchBarOverlay(
+                query = query,
+                onQueryChange = { query = it },
+                onSearch = {
+                    // TODO: 여기서 카카오 장소검색/지오코딩 호출 후
+                    // 결과 좌표로 map.moveCamera(...) 하면 끝!
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = 24.dp)       // 겹치는 정도 조절 (원하는 만큼 +/−)
+                    .zIndex(1f)              // 배너 위에 보이도록
+                    .fillMaxWidth(0.9f)
+                    .pointerInput(Unit) {
+                        // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
+                        detectTapGestures(onTap = {
+                            focusManager.clearFocus()
+                        })
+                    },
+                leadingIcon = {
+                    Icon(
+                        painterResource(id = R.drawable.logo_zipcheck),
+                        contentDescription = "로고",
+                        modifier = Modifier.size(39.dp),
+                        tint = Color.Unspecified
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        painterResource(id = R.drawable.ic_home_search),
+                        contentDescription = "지우기",
+                        modifier = Modifier
+                            .size(20.dp)
+                    )
+                }
+            )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(50.dp))
 
         // 3) 피해 신고 집중 접수 주소지 TOP: K/지 Placeholder
         Column(
@@ -315,122 +405,75 @@ fun MainScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
         ) {
+            Text(
+                "피해 신고 집중 접수 주소지 TOP 5",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            TopReportsCarousel(
+                tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
+                autoScrollMillis = 3500L // 자동 넘김 주기
+            )
+        }
+
+        Spacer(Modifier.height(32.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "피해 신고 집중 접수 주소지 TOP",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.Black
+                    "최근 실행한 위험도 분석",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Black
                 )
 
+                Spacer(modifier = Modifier.weight(1f))
+
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_next),
+                    contentDescription = "next",
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable { navController.navigate("risk_analysis_record") } // 클릭 시 이전 화면으로 돌아감
+                )
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            // 빈 영역 (내용 Placeholder)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp) // 적당한 높이 설정
-                    .padding(top = 8.dp)
-                    .align(Alignment.CenterHorizontally),
-                contentAlignment = Alignment.Center
-            ) {
-                // 이 영역에 실제 피해 신고 TOP 리스트가 들어갈 것입니다.
-                // Text("피해 신고 TOP 리스트 영역")
-            }
         }
-    }
-}
 
-// 하단 탭 항목 정의
-sealed class BottomNavItem(var title: String, var icon: Int, var screen_route: String) {
-    object Home : BottomNavItem("홈", R.drawable.ic_home, "main_screen")
-    object Search : BottomNavItem("신고 탐색", R.drawable.ic_location, "map")
-    object Risk : BottomNavItem("위험도 조회", R.drawable.ic_list, "search") // 가상의 경로
-    object My : BottomNavItem("마이", R.drawable.ic_profile, "my_page") // 가상의 경로
-}
-
-// 하단 내비게이션 바 Composable
-@Composable
-fun BottomNavigationBar(navController: NavHostController) {
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Search,
-        BottomNavItem.Risk,
-        BottomNavItem.My
-    )
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    Surface(
-        color = White,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        border = BorderStroke(1.dp, BackGround)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                val selected = when (item) {
-                    BottomNavItem.Home  -> currentRoute == BottomNavItem.Home.screen_route
-                    BottomNavItem.Search-> currentRoute in listOf("map", "search_address", "input_address_detail_screen/{roadAddress}")
-                    BottomNavItem.Risk  -> currentRoute == BottomNavItem.Risk.screen_route
-                    BottomNavItem.My    -> currentRoute == BottomNavItem.My.screen_route
-                }
-
-                CustomBottomNavigationItem(
-                    item = item,
-                    selected = selected
-                ) {
-                    navController.navigate(item.screen_route) {
-                        navController.graph.startDestinationRoute?.let { start ->
-                            popUpTo(start) { saveState = true }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            }
-        }
-    }
-}
-
-// 개별 하단 탭 항목 Composable
-@Composable
-fun CustomBottomNavigationItem(
-    item: BottomNavItem,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val interaction = remember { MutableInteractionSource() }
-
-    Column(
-        modifier = Modifier
-            .size(56.dp)
-            .padding(vertical = 4.dp)
-            // 클릭 리스너 설정
-            .clickable(
-                interactionSource = interaction,
-                indication = null
-            ) { onClick() },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            painter = painterResource(id = item.icon),
-            contentDescription = item.title,
-            tint = if (selected) MainBlue else BtNavGray,
-            modifier = Modifier.size(24.dp)
+        val sampleResults = listOf(
+            RiskAnalysisResult(
+                id = 1,
+                address = "경기도 구리시 인창2로 65 (인창동)",
+                apartment = "힐스테이트 구리역 105동 1604호",
+                riskPercentage = 88,
+                riskLevel = "아주 위험",
+                note = "유사 매물 대비 보증금이 10% 높습니다",
+                date = LocalDate.of(2025, 9, 14)
+            ),
+            RiskAnalysisResult(
+                id = 2,
+                address = "경기도 구리시 인창2로 65 (인창동)",
+                apartment = "힐스테이트 구리역 105동 1604호",
+                riskPercentage = 60,
+                riskLevel = "의심",
+                note = "유사 매물 대비 보증금이 10% 높습니다",
+                date = LocalDate.of(2025, 9, 14)
+            )
+            // 여기에 추가 결과들을 넣을 수 있습니다.
         )
-        Text(
-            text = item.title,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) MainBlue else BtNavGray
+
+        // case 1: 결과 2개 + 추가 카드 1개
+        RiskAnalysisList(
+            results = sampleResults,
+            onAddClicked = { println("Add New Analysis") },
+            onItemClicked = { result -> println("Clicked: ${result.address}") },
+            navController = navController
         )
     }
 }
