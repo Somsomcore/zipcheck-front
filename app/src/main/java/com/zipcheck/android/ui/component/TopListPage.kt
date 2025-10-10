@@ -139,7 +139,7 @@ fun TopReportsCarousel(
         state = pagerState,
         modifier = Modifier
             .fillMaxWidth()
-            .height(240.dp), // 카드 영역 높이
+            .wrapContentHeight(),
         beyondViewportPageCount = 0
     ) { page ->
         ReportCard(
@@ -151,6 +151,8 @@ fun TopReportsCarousel(
             chip2 = "#" + "깡통전세"
         )
     }
+
+    Spacer(Modifier.height(4.dp))
 
     Row(
         Modifier
@@ -165,7 +167,7 @@ fun TopReportsCarousel(
                     .padding(2.dp)
                     .clip(CircleShape)
                     .background(color)
-                    .size(8.dp)
+                    .size(5.dp)
             )
         }
     }

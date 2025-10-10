@@ -69,10 +69,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.zIndex
+import com.zipcheck.android.data.RiskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.BottomNavItem
 import com.zipcheck.android.ui.component.BottomNavigationBar
+import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
 import com.zipcheck.android.ui.component.TopReportsCarousel
+import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
 import kotlinx.coroutines.launch
@@ -207,6 +210,12 @@ class MainActivity : ComponentActivity() {
                                 showBottomBar.value = true
                             }
                             RegisterScreen()
+                        }
+                        composable("my_page") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = true
+                            }
+                            MyPageScreen()
                         }
                     }
                 }
@@ -370,23 +379,21 @@ fun MainScreen(
             )
         }
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(50.dp))
 
         // 3) 피해 신고 집중 접수 주소지 TOP: K/지 Placeholder
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "피해 신고 집중 접수 주소지 TOP 5",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Black
-                )
+            Text(
+                "피해 신고 집중 접수 주소지 TOP 5",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black
+            )
 
-            }
+            Spacer(Modifier.height(16.dp))
 
             TopReportsCarousel(
                 tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
@@ -394,7 +401,7 @@ fun MainScreen(
             )
         }
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(32.dp))
 
         Column(
             modifier = Modifier
@@ -405,11 +412,48 @@ fun MainScreen(
                 Text(
                     "최근 실행한 위험도 분석",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.Black
+                    color = Black
                 )
 
+                Spacer(modifier = Modifier.weight(1f))
+
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_next),
+                    contentDescription = "next",
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
+                )
             }
 
         }
+
+        val sampleResults = listOf(
+            RiskAnalysisResult(
+                id = 1,
+                address = "경기도 구리시 인창2로 65 (인창동)",
+                apartment = "힐스테이트 구리역 105동 1604호",
+                riskPercentage = 88,
+                riskLevel = "아주 위험",
+                note = "유사 매물 대비 보증금이 10% 높습니다"
+            ),
+            RiskAnalysisResult(
+                id = 2,
+                address = "경기도 구리시 인창2로 65 (인창동)",
+                apartment = "힐스테이트 구리역 105동 1604호",
+                riskPercentage = 60,
+                riskLevel = "의심",
+                note = "유사 매물 대비 보증금이 10% 높습니다"
+            )
+            // 여기에 추가 결과들을 넣을 수 있습니다.
+        )
+
+        // case 1: 결과 2개 + 추가 카드 1개
+        RiskAnalysisList(
+            results = sampleResults,
+            onAddClicked = { println("Add New Analysis") },
+            onItemClicked = { result -> println("Clicked: ${result.address}") },
+            navController = navController
+        )
     }
 }
