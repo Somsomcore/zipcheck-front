@@ -232,7 +232,7 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = true
                             }
-                            MyPageScreen()
+                            MyPageScreen(navController = navController)
                         }
                     }
                 }
