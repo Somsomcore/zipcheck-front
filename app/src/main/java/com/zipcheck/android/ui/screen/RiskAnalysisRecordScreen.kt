@@ -2,6 +2,7 @@ package com.zipcheck.android.ui.screen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,6 +48,7 @@ import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.component.MonthYearPicker
 import com.zipcheck.android.ui.component.RiskResultCard
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -77,6 +80,13 @@ fun RiskAnalysisRecordScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(TopBar)
+            )
+
             // ── 1. 월 선택 토글 (Header) ──
             MonthToggleHeader(
                 selectedMonth = selectedMonth,
