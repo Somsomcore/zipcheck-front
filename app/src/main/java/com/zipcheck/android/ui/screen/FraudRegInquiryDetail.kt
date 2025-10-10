@@ -1,13 +1,20 @@
 package com.zipcheck.android.ui.screen
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
 import android.location.Geocoder
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,7 +46,21 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.kakao.vectormap.KakaoMap
+import com.kakao.vectormap.KakaoMapReadyCallback
+import com.kakao.vectormap.MapLifeCycleCallback
+import com.kakao.vectormap.MapView
+import com.kakao.vectormap.camera.CameraUpdateFactory
+import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.SearchBarOverlay
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.White
+import java.lang.Exception
 
 
 // ⚠️ 이전 파일에서 정의된 색상 및 스타일을 다시 정의하거나 임포트해야 합니다.
@@ -93,7 +114,11 @@ fun FraudRegInquiryDetailScreen(
     var showReasonSheet by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { DetailTopBar(navController) } // ✅ 상단 앱바만 Scaffold에 둠
+        topBar = {
+            CustomTopBar("사기 접수 수락", navController)
+        },
+        containerColor = White,
+//        topBar = { DetailTopBar(navController) } // ✅ 상단 앱바만 Scaffold에 둠
     ) { paddingValues ->
 
         // 지도를 화면에 표시
@@ -102,7 +127,7 @@ fun FraudRegInquiryDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-//            MapSection(detail)
+            MapSection(detail)
 
             // 상세 정보 + 버튼을 바텀시트로
             if (showSheet) {
@@ -376,35 +401,156 @@ fun FraudRegInquiryDetailScreen(
         )
     }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapSection(detail: FraudDetail) {
-    val context = LocalContext.current
-    val cameraPositionState = rememberCameraPositionState()
+//    val context = LocalContext.current
+//    val cameraPositionState = rememberCameraPositionState()
+//
+//    // Geocoding → LatLng 변환
+//    var latLng by remember { mutableStateOf(LatLng(37.5665, 126.9780)) } // 기본값 서울
+//
+//    LaunchedEffect(detail.addressRoad) {
+//        val geocoder = Geocoder(context, Locale.getDefault())
+//        val results = geocoder.getFromLocationName(detail.addressRoad, 1)
+//        if (!results.isNullOrEmpty()) {
+//            latLng = LatLng(results[0].latitude, results[0].longitude)
+//            cameraPositionState.position = CameraPosition.fromLatLngZoom(latLng, 16f)
+//        }
+//    }
+//
+//    GoogleMap(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(250.dp)
+//            .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)),
+//        cameraPositionState = cameraPositionState
+//    ) {
+//        Marker(
+//            state = MarkerState(position = latLng),
+//            title = detail.addressRoad,
+//            snippet = detail.addressDetail,
+//            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+//        )
+//    }
 
-    // Geocoding → LatLng 변환
-    var latLng by remember { mutableStateOf(LatLng(37.5665, 126.9780)) } // 기본값 서울
-    LaunchedEffect(detail.addressRoad) {
-        val geocoder = Geocoder(context, Locale.getDefault())
-        val results = geocoder.getFromLocationName(detail.addressRoad, 1)
-        if (!results.isNullOrEmpty()) {
-            latLng = LatLng(results[0].latitude, results[0].longitude)
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(latLng, 16f)
+    // 카카오 맵
+    val context = LocalContext.current
+
+    // 1. MapView 인스턴스를 remember로 유지
+    val mapView = remember {
+        MapView(context)
+    }
+    val locationManager = remember {
+        context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
+
+    val perms = rememberMultiplePermissionsState(
+        listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
+
+    var query by remember { mutableStateOf("") }
+
+    // 1) 최초 진입 시(또는 해당 화면 재진입 시) 안전하게 권한 요청
+    LaunchedEffect(perms.permissions) {
+        if (!perms.allPermissionsGranted) {
+            perms.launchMultiplePermissionRequest()
         }
     }
 
-    GoogleMap(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp)
-            .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)),
-        cameraPositionState = cameraPositionState
-    ) {
-        Marker(
-            state = MarkerState(position = latLng),
-            title = detail.addressRoad,
-            snippet = detail.addressDetail,
-            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-        )
+    Scaffold(
+    ) { paddingValues -> // Scafflod의 padding 값을 받습니다.
+
+        // **모든 지도 및 UI 콘텐츠는 이 paddingValues를 Modifier에 적용해야 합니다.**
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues) // 👈 Scafflod의 상단바 높이만큼 공간 확보
+        ) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { mapView } // MapView 인스턴스 반환
+            )
+
+            // 2. DisposableEffect로 MapView 생명주기 관리
+            DisposableEffect(perms.allPermissionsGranted) {
+                if (perms.allPermissionsGranted) { // 위치 권한 부여된 경우
+                    // 화면 진입 시 MapView 시작
+                    mapView.start(
+                        object : MapLifeCycleCallback() {
+                            override fun onMapDestroy() {
+                                Log.d("MapScreen", "Kakao Map Destroyed")
+                            }
+
+                            override fun onMapError(error: Exception?) {
+                                Log.e("MapScreen", "Kakao Map Error: ${error?.message}", error)
+                            }
+                        },
+                        object : KakaoMapReadyCallback() {
+                            @SuppressLint("MissingPermission")
+                            override fun onMapReady(map: KakaoMap) {
+                                // 위치 업데이트를 요청하고, 위치가 업데이트되면 맵을 이동시킵니다.
+                                locationManager.requestLocationUpdates(
+                                    LocationManager.GPS_PROVIDER,
+                                    1000L, 10f,
+                                    object :
+                                        LocationListener { // DisposableEffect 내에서 새로운 Listener를 정의하여 map을 캡처
+                                        override fun onLocationChanged(location: Location) {
+                                            val newPosition =
+                                                com.kakao.vectormap.LatLng.from(location.latitude, location.longitude)
+                                            map.moveCamera(
+                                                CameraUpdateFactory.newCenterPosition(
+                                                    newPosition
+                                                )
+                                            )
+                                            Log.d("Location", "위치 업데이트: $newPosition")
+                                        }
+
+                                        override fun onProviderEnabled(provider: String) {}
+                                        override fun onProviderDisabled(provider: String) {}
+                                    }
+                                )
+
+                                // 초기 위치 가져오기
+                                locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                                    ?.let { lastLoc ->
+                                        map.moveCamera(
+                                            CameraUpdateFactory.newCenterPosition(
+                                                com.kakao.vectormap.LatLng.from(
+                                                    lastLoc.latitude,
+                                                    lastLoc.longitude
+                                                )
+                                            )
+                                        )
+                                    }
+                            }
+                        }
+                    )
+                }
+
+                // Composable이 화면에서 제거될 때 정리
+                onDispose {
+                    mapView.resume()
+                    mapView.pause()
+                }
+            }
+
+            // 3) 권한 없을 때는 UI만 보여주고, 버튼으로 재요청(자동 호출 금지!)
+            if (!perms.allPermissionsGranted) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("지도와 현재 위치를 표시하려면 위치 권한이 필요합니다.")
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { perms.launchMultiplePermissionRequest() }) {
+                            Text("권한 허용하기")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -610,7 +756,7 @@ fun EvidenceSection(detail: FraudDetail) {
             OutlinedButton(
                 onClick = onDenyClick,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(2f)
                     .height(50.dp),
                 shape = RoundedCornerShape(
                     topStart = 16.dp, bottomStart = 16.dp, // 왼쪽 모서리 0dp
@@ -623,11 +769,13 @@ fun EvidenceSection(detail: FraudDetail) {
                 Text("반려 하기", fontWeight = FontWeight.SemiBold)
             }
 
+            Spacer(modifier = Modifier.weight(0.5f))
+
             // 수락하기 버튼 (우측)
             Button(
                 onClick = onAcceptClick,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(2f)
                     .height(50.dp),
                 shape = RoundedCornerShape(
                     topStart = 16.dp, bottomStart = 16.dp, // 왼쪽 모서리 0dp
