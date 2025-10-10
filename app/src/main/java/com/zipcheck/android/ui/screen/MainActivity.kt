@@ -51,8 +51,10 @@ import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.offset
@@ -80,8 +82,10 @@ import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -158,6 +162,19 @@ class MainActivity : ComponentActivity() {
                             }
                             MainScreen(navController = navController)
                         }
+                        composable("risk_analysis_record") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+                            RiskAnalysisRecordScreen(navController = navController)
+                        }
+                        composable("risk_analysis_result") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+                            RiskAnalysisResultScreen(navController = navController)
+                        }
+
                         // Other screen routes
                         composable("search") {
                             LaunchedEffect(Unit) {
@@ -224,6 +241,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(
     navController: NavHostController,
@@ -422,7 +440,7 @@ fun MainScreen(
                     contentDescription = "next",
                     modifier = Modifier
                         .size(16.dp)
-                        .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
+                        .clickable { navController.navigate("risk_analysis_record") } // 클릭 시 이전 화면으로 돌아감
                 )
             }
 
@@ -435,7 +453,8 @@ fun MainScreen(
                 apartment = "힐스테이트 구리역 105동 1604호",
                 riskPercentage = 88,
                 riskLevel = "아주 위험",
-                note = "유사 매물 대비 보증금이 10% 높습니다"
+                note = "유사 매물 대비 보증금이 10% 높습니다",
+                date = LocalDate.of(2025, 9, 14)
             ),
             RiskAnalysisResult(
                 id = 2,
@@ -443,7 +462,8 @@ fun MainScreen(
                 apartment = "힐스테이트 구리역 105동 1604호",
                 riskPercentage = 60,
                 riskLevel = "의심",
-                note = "유사 매물 대비 보증금이 10% 높습니다"
+                note = "유사 매물 대비 보증금이 10% 높습니다",
+                date = LocalDate.of(2025, 9, 14)
             )
             // 여기에 추가 결과들을 넣을 수 있습니다.
         )

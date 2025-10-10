@@ -56,7 +56,7 @@ fun RiskAnalysisList(
             items(results.take(MAX_ITEMS)) { result ->
                 RiskResultCard(
                     result = result,
-                    onClick = { navController.navigate("search_result") }
+                    onClick = { navController.navigate("risk_analysis_result") }
                 )
             }
 
