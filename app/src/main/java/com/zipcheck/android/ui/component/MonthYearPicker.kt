@@ -2,6 +2,7 @@ package com.zipcheck.android.ui.component
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,10 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
+import com.zipcheck.android.ui.theme.MainBlue
 import java.time.LocalDate
 import java.time.Month
 import kotlin.math.floor
@@ -46,7 +51,9 @@ fun MonthYearPicker(
     var selectedYear by remember { mutableStateOf(currentYear) }
     var selectedMonth by remember { mutableStateOf(LocalDate.now().monthValue) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         // 년/월 휠 선택기
         Row(
             modifier = Modifier
@@ -78,14 +85,41 @@ fun MonthYearPicker(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .height(56.dp)
+                .padding(top = 1.dp), // 버튼 윗줄에 얇은 구분선처럼 보이도록
+            horizontalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            Button(onClick = onCancel, modifier = Modifier.weight(1f)) {
-                Text("취소")
+            // 취소 버튼
+            Button(
+                onClick = onCancel,
+                // 버튼 shape는 0.dp 유지 (Surface 하단 모서리와 일치)
+                shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color.Black // 텍스트 색상을 검정색 계열로 변경 (이미지 반영)
+                ),
+                border = BorderStroke(0.5.dp, Color.LightGray), // 중앙 구분선 역할
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Text("취소", color = Color.Black)
             }
-            Button(onClick = { onConfirm(selectedYear, selectedMonth) }, modifier = Modifier.weight(1f)) {
-                Text("확인")
+
+            // 확인 버튼
+            Button(
+                onClick = { onConfirm(selectedYear, selectedMonth) },
+                // 버튼 shape는 0.dp 유지
+                shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MainBlue,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Text("확인", fontWeight = FontWeight.Bold)
             }
         }
     }

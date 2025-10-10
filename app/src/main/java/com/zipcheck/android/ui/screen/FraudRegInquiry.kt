@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
+import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.PurpleGrey40
 import com.zipcheck.android.ui.theme.PurpleGrey80
@@ -98,7 +99,7 @@ fun FraudRegInquiryScreen(navController: NavHostController,
     }
     // 1. Scaffold (Material3) for overall screen structure
     Scaffold(
-        topBar = { FraudInquiryTopBar(title = "사기 접수 수락") },
+        topBar = { CustomTopBar("사기 접수 수락", navController) },
         snackbarHost = { SnackbarHost(snackbarHostState) { data ->
             Snackbar(
                 snackbarData = data,
