@@ -70,7 +70,7 @@ fun RiskAnalysisList(
 @Composable
 fun AddCard(onClick: () -> Unit) {
     Card(
-        onClick = { onClick }, // 등록 화면 연결
+        onClick = { onClick() }, // 등록 화면 연결
         modifier = Modifier
             .width(200.dp) // 결과 카드와 동일한 너비 유지
             .height(250.dp), // 결과 카드와 동일한 높이 유지

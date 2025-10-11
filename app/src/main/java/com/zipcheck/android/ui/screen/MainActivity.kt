@@ -234,9 +234,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("register") {
                             LaunchedEffect(Unit) {
-                                showBottomBar.value = true
+                                showBottomBar.value = false
                             }
-                            RegisterScreen()
+                            RegisterScreen(navController = navController)
                         }
                         composable("my_page") {
                             LaunchedEffect(Unit) {
@@ -287,10 +287,11 @@ fun MainScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(230.dp),
+                    .height(230.dp)
+                    .clickable(onClick = {navController.navigate("register")}),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(4.dp)
+                elevation = CardDefaults.cardElevation(4.dp),
             ) {
                 // Row 대신 Box로 배치 자유도 확보
                 Box(modifier = Modifier
@@ -316,7 +317,7 @@ fun MainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "전세 위험 확인하러 가기 ", // > 문자 제거
+                                "사기 매물 등록 하기 ", // > 문자 제거
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White
                             )
@@ -482,7 +483,7 @@ fun MainScreen(
         // case 1: 결과 2개 + 추가 카드 1개
         RiskAnalysisList(
             results = sampleResults,
-            onAddClicked = { println("Add New Analysis") },
+            onAddClicked = { navController.navigate("search_") },
             onItemClicked = { result -> println("Clicked: ${result.address}") },
             navController = navController
         )
