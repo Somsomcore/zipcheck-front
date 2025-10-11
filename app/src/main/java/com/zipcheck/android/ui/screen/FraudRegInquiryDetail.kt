@@ -64,7 +64,6 @@ import java.lang.Exception
 
 
 // ⚠️ 이전 파일에서 정의된 색상 및 스타일을 다시 정의하거나 임포트해야 합니다.
-private val MainBlue = Color(0xFF448AFF)
 private val LightBlack = Color(0xFF0B0D0E)
 private val DarkBlack = Color(0xFF444C55)
 private val Gray = Color(0xFFE3E5E8)

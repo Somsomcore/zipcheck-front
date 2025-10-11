@@ -1,99 +1,665 @@
 package com.zipcheck.android.ui.screen
-
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.abs
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.coerceAtMost
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
-import com.zipcheck.android.ui.theme.Black
-import com.zipcheck.android.ui.theme.MainBlue
-import com.zipcheck.android.ui.theme.TextFieldBorderGray
+import com.zipcheck.android.ui.theme.PurpleGrey80
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.text.find
+import kotlin.text.toFloat
+import kotlin.time.Duration.Companion.seconds
 
+// 🎨 색상 정의 (사용자 이미지 기반)
+val MainBlue = Color(0xFF4285F4) // 파란색 버튼 및 포커스 색상
+val Black = Color(0xFF000000)
+val TextFieldBorderGray = Color(0xFFD0D0D0)
+val LightGrayBackground = Color(0xFFF0F0F0) // 모달 배경 등
+val TimeGray = Color(0xFF888888) // 인증번호 타이머 색상
+
+// 네비게이션 더미 함수 (실제 환경에서는 NavController 사용)
+fun NavController.popBackStackAndShowToast(message: String) {
+    println("Navigate back to LoginScreen. Show Toast: $message")
+}
+
+// ⏳ 인증번호 타이머 Composable
 @Composable
-fun NameInputScreen(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // 뒤로가기 아이콘
-        Icon(
-            painter = painterResource(id = R.drawable.ic_back),
-            contentDescription = "Back",
-            modifier = Modifier
-                .align(Alignment.Start)
-                .size(24.dp)
-                .padding(start = 4.dp)
-                .clickable {
-                    navController.popBackStack()
-                }
-        )
+fun AuthTimer(
+    modifier: Modifier = Modifier,
+    initialDurationSeconds: Int = 180, // 3분
+    onTimeout: () -> Unit
+) {
+    var timeLeft by remember { mutableStateOf(initialDurationSeconds) }
 
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // 제목
-        Text(
-            text = "이름을 입력해주세요",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold
-            )
-        )
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        // 라벨 + 텍스트필드
-        Text(
-            text = "이름",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        var name by remember { mutableStateOf("") }
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 5.dp),
-            singleLine = true,
-            colors = androidx . compose . material3 . OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Black, // 입력 중 텍스트 색상
-                unfocusedTextColor = Black, // 입력 안 할 때 텍스트 색상
-                focusedBorderColor = MainBlue, // 포커스 됐을 때 테두리 색상
-                unfocusedBorderColor = TextFieldBorderGray // 포커스 안 됐을 때 테두리 색상
-        )
-        )
-        Spacer(modifier = Modifier.height(30.dp))
-
-        // 예시 버튼 (실제 앱의 디자인에 맞춰 수정하세요)
-        Button(
-            onClick = {
-                navController.navigate("login_screen_telecom/$name")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = name.isNotBlank() // 이름이 비어있지 않을 때만 활성화
-        ) {
-            Text("다음")
+    LaunchedEffect(timeLeft) {
+        if (timeLeft > 0) {
+            delay(1.seconds)
+            timeLeft--
+        } else {
+            onTimeout()
         }
     }
+
+    val minutes = timeLeft / 60
+    val seconds = timeLeft % 60
+    val timeText = String.format("%02d:%02d", minutes, seconds)
+
+    Text(
+        text = timeText,
+        color = TimeGray,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = modifier
+    )
+}
+
+// 📱 회원가입 메인 화면
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NameInputScreen(navController: NavController) {
+    val carriers = remember { listOf("SKT", "KT", "LG U+", "SKT 알뜰폰", "KT 알뜰폰", "LG U+ 알뜰폰") }
+
+    // 🌟 상태 변수
+    var name by remember { mutableStateOf("") } // 첫번째 그림의 예시값
+    var selectedCarrier by remember { mutableStateOf("") } // 첫번째 그림의 예시값
+    var phoneNumber by remember { mutableStateOf("") } // 첫번째 그림의 예시값
+    var isCarrierSheetVisible by remember { mutableStateOf(false) }
+    var isAuthSheetVisible by remember { mutableStateOf(false) }
+    var isNameFocused by remember { mutableStateOf(false) }
+    var isCarrierFocused by remember { mutableStateOf(false) }
+    var isPhoneFocused by remember { mutableStateOf(false) }
+    var phoneAuthState by remember { mutableStateOf<PhoneAuthState>(PhoneAuthState.Pending) } // 인증 상태
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 팝업 표시 함수
+    fun showSnackbar(message: String) {
+        scope.launch {
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+        }
+    }
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                // 이미지의 팝업처럼 화면 하단 중앙에 나타나도록 커스텀
+                Snackbar(
+                    modifier = Modifier.padding(bottom = 20.dp),
+                    containerColor = Black.copy(alpha = 0.8f),
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(data.visuals.message, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                }
+            }
+        },
+        bottomBar = {
+            // "완료" 버튼 영역 (인증 완료 상태일 때만 표시)
+            AnimatedVisibility(
+                visible = phoneAuthState is PhoneAuthState.Completed,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Button(
+                    onClick = {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("signup_result_key", "success") // "성공했다"는 약속된 데이터를 저장
+                        navController.popBackStack() // 이전 화면으로 돌아가기
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
+                ) {
+                    Text("완료", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+            // "확인" 버튼 영역 (통신사 선택 모달에 사용됨)
+            // 메인 화면에는 버튼이 없고, 인증 완료 시 "완료" 버튼이 나타남.
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
+            // 1. 메인 콘텐츠 영역
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_back),
+                        contentDescription = "Back",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 제목
+                Text(
+                    text = "계정 생성을 위해\n아래 정보를 입력해 주세요",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                // 1. 이름 입력 필드
+                Text(text = "이름", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                        .onFocusChanged { isNameFocused = it.isFocused },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        // 1. 입력 시 테두리 파란색
+                        focusedBorderColor = MainBlue,
+                        unfocusedBorderColor = if (isNameFocused) MainBlue else TextFieldBorderGray,
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                // 2. 통신사 선택 필드
+                Text(text = "통신사", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = selectedCarrier,
+                    onValueChange = { /* 텍스트 입력 방지 */ },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            focusManager.clearFocus() // 다른 포커스 해제
+                            isCarrierSheetVisible = true // 바텀 시트 표시
+                        },
+                    readOnly = true,
+                    enabled = false,
+                    singleLine = true,
+                    trailingIcon = {
+                        Image(painter = painterResource(id = R.drawable.icon_down), // 여기에 원하는 아이콘 리소스 ID를 넣으세요.
+                            contentDescription = "통신사 선택", // 아이콘에 대한 설명 (접근성을 위함)
+                            modifier = Modifier.size(16.dp) // 아이콘 크기 조절
+                        )
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        // 1. 입력 시 테두리 파란색 (클릭으로 처리되므로 unfocused에도 반영)
+                        focusedBorderColor = MainBlue,
+                        unfocusedBorderColor = if (isCarrierFocused) MainBlue else TextFieldBorderGray,
+                        disabledBorderColor = TextFieldBorderGray // 클릭으로 인한 활성화/비활성화 시
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                // 3. 휴대폰 번호 입력 필드
+                Text(text = "휴대폰 번호", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { if (it.length <= 11) phoneNumber = it }, // 11자리 제한
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                        .onFocusChanged { isPhoneFocused = it.isFocused },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        // 1. 입력 시 테두리 파란색
+                        focusedBorderColor = MainBlue,
+                        unfocusedBorderColor = if (isPhoneFocused) MainBlue else TextFieldBorderGray,
+                    ),
+                    // 👇 trailingIcon을 사용하여 버튼을 내부에 배치합니다.
+                    trailingIcon = {
+                        Button(
+                            onClick = {
+                                focusManager.clearFocus()
+                                if (phoneNumber.isBlank()) {
+                                    // 3. 휴대폰 번호 미입력 시 팝업
+                                    showSnackbar("휴대폰 번호가 입력되지 않았습니다.")
+                                } else if (phoneAuthState is PhoneAuthState.Completed) {
+                                    // 이미 인증 완료 상태면 아무것도 안 함
+                                    return@Button
+                                } else {
+                                    // 4. 휴대폰 번호 입력 시 인증번호 모달 띄우기
+                                    isAuthSheetVisible = true
+                                }
+                            },
+                            // 인증 완료 상태일 경우 버튼 모양 변경
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = when (phoneAuthState) {
+                                    is PhoneAuthState.Completed -> Color(0xFFE0F7FA) // 연한 색상
+                                    // 이미지의 회색 배경과 유사하게
+                                    else -> Color(0xFFF1F2F4) // SectionGray 또는 유사한 회색
+                                },
+                                disabledContainerColor = Color(0xFFF1F2F4) // 비활성화 시 색상
+                            ),
+                            shape = RoundedCornerShape(8.dp), // 이미지처럼 모서리를 둥글게
+                            modifier = Modifier
+                                .height(36.dp) // 버튼 높이를 텍스트 필드보다 작게 조절
+                                .padding(end = 8.dp) // 우측 여백
+                        ) {
+                            Text(
+                                text = when (phoneAuthState) {
+                                    is PhoneAuthState.Completed -> "인증 완료"
+                                    else -> "인증 요청"
+                                },
+                                color = when (phoneAuthState) {
+                                    is PhoneAuthState.Completed -> MainBlue
+                                    // 이미지의 글자색과 유사하게
+                                    else -> Color(0xFF8B96A2) // PdfGrey 또는 유사한 회색
+                                },
+                                fontSize = 12.sp // 글자 크기를 작게 조절
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    // 2. 통신사 선택 ModalBottomSheet
+    if (isCarrierSheetVisible) {
+        CarrierSelectionSheet(
+            sheetState = sheetState,
+            carriers = carriers,
+            selectedCarrier = selectedCarrier,
+            onDismiss = { isCarrierSheetVisible = false },
+            onCarrierConfirmed = { newCarrier ->
+                selectedCarrier = newCarrier
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    if (!sheetState.isVisible) isCarrierSheetVisible = false
+                }
+            }
+        )
+    }
+
+    // 4. 휴대폰 인증번호 입력 ModalBottomSheet
+    if (isAuthSheetVisible) {
+        AuthNumberInputSheet(
+            sheetState = sheetState,
+            onDismiss = { isAuthSheetVisible = false },
+            onAuthCompleted = {
+                phoneAuthState = PhoneAuthState.Completed(true)
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    if (!sheetState.isVisible) isAuthSheetVisible = false
+                }
+            },
+            onAuthFailed = {
+                // 5. 인증번호 틀릴 시 팝업
+                showSnackbar("잘못된 인증번호입니다. 다시 입력해주세요.")
+            },
+            onResend = {
+                // "다시 보내기" 로직 (타이머 리셋 등)
+                println("인증번호 다시 보내기 요청")
+            }
+        )
+    }
+}
+
+// ✅ 2. 통신사 선택 ModalBottomSheet Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CarrierSelectionSheet(
+    sheetState: SheetState,
+    carriers: List<String>,
+    selectedCarrier: String,    onDismiss: () -> Unit,
+    onCarrierConfirmed: (String) -> Unit
+) {
+    // 1. 초기 스크롤 위치 설정을 위한 상태
+    val initialIndex = carriers.indexOf(selectedCarrier).takeIf { it != -1 } ?: (carriers.size / 2)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
+
+    // 2. 현재 선택된 항목을 임시로 저장
+    var tempSelectedCarrier by remember { mutableStateOf(selectedCarrier) }
+    val scope = rememberCoroutineScope()
+    var currentCenteredCarrier by remember { mutableStateOf(selectedCarrier) }
+    // 3. 스크롤이 멈췄을 때 중앙 항목을 선택된 것으로 처리
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            if (visibleItems.isNotEmpty()) {
+                val viewportCenter = listState.layoutInfo.viewportSize.height / 2
+                val centerItem = visibleItems.minByOrNull {
+                    abs((it.offset + it.size / 2) - viewportCenter)
+                }
+                centerItem?.let {
+                    if (it.index < carriers.size) {
+                        currentCenteredCarrier = carriers[it.index]
+                    }
+                }
+            }
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = null // 핸들 제거하여 이미지와 유사하게
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val listHeight = 300.dp
+            val itemHeight = 56.dp
+            val verticalPadding = (listHeight / 2) - (itemHeight / 2)
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(listHeight),
+                // 상단과 하단에 패딩을 주어 첫 아이템과 마지막 아이템이 중앙에 올 수 있도록 함
+                contentPadding = PaddingValues(vertical = verticalPadding)
+            ) {
+                itemsIndexed(carriers) { index, carrier ->
+                    val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
+                    val currentItemInfo = visibleItemsInfo.find { it.index == index }
+                    val viewportCenter = (itemHeight.value).toInt()
+
+                    val isSelected = currentItemInfo?.let {
+                        val centerOfItem = it.offset + it.size / 2
+                        // 모든 보이는 아이템 중에서 현재 아이템이 중앙에 가장 가까운지 확인
+                        visibleItemsInfo.minByOrNull { item -> abs((item.offset + item.size / 2) - viewportCenter) }?.index == index
+                    } ?: false
+                    // 중앙으로부터의 거리를 계산하여 그래픽 효과 적용
+                    val (scale, alpha) = currentItemInfo?.let {
+                        val itemCenter = it.offset + it.size / 2
+                        val distance = abs(viewportCenter - itemCenter).toFloat()
+                        // 거리에 따른 스케일과 알파값 계산 (중앙일수록 1.0, 멀수록 작아짐)
+                        val maxDistance = viewportCenter.toFloat()
+                        val scale = (1f - (distance / maxDistance).coerceAtMost(0.4f)).coerceIn(0.6f, 1.2f) // 중앙 항목을 약간 더 크게
+                        val alpha = (1f - (distance / maxDistance).coerceAtMost(0.7f)).coerceIn(0.3f, 1f)
+                        scale to alpha
+                    } ?: (0.6f to 0.3f) // 화면에 안 보이는 항목의 기본값
+
+                    Text(
+                        text = carrier,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            color = if (isSelected) MainBlue else Black, // 선택된 항목은 파란색
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 30.sp
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(itemHeight)
+                            .graphicsLayer { // graphicsLayer를 사용하여 스케일과 알파 적용
+                                this.scaleX = scale
+                                this.scaleY = scale
+                                this.alpha = alpha
+                            }
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                // 클릭 시 해당 항목으로 스크롤
+                                scope.launch {
+                                    listState.animateScrollToItem(index)
+                                }
+                            }
+                            // Text에 수직 정렬을 위한 wrapper 추가
+                            .wrapContentHeight(Alignment.CenterVertically)
+                    )
+                }
+            }
+
+
+            // 하단 버튼 (취소/확인) - 기존 코드 유지
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                // .padding(top = 16.dp) // 목록과 버튼 사이 간격 제거 또는 조정
+            ) {
+                // 취소 버튼
+                Button(
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) onDismiss()
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    shape = RoundedCornerShape(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    border = BorderStroke(0.5.dp, TextFieldBorderGray)
+                ) {
+                    Text("취소", color = Black, fontWeight = FontWeight.Bold)
+                }
+
+                // 확인 버튼
+                Button(
+                    onClick = { onCarrierConfirmed(currentCenteredCarrier) },
+                    enabled = currentCenteredCarrier.isNotBlank(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    shape = RoundedCornerShape(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MainBlue),
+                    border = BorderStroke(0.5.dp, TextFieldBorderGray)
+                ) {
+                    Text("확인", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+
+// 🔑 4. 휴대폰 인증번호 입력 ModalBottomSheet Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AuthNumberInputSheet(
+    sheetState: SheetState,
+    onDismiss: () -> Unit,
+    onAuthCompleted: () -> Unit,
+    onAuthFailed: () -> Unit,
+    onResend: () -> Unit
+) {
+    var authNumber by remember { mutableStateOf("") }
+    var isAuthNumberFocused by remember { mutableStateOf(false) }
+    var isTimeout by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        // 이미지처럼 모달 상단이 살짝 튀어나온 디자인
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(48.dp)
+                    .height(4.dp)
+                    .background(Color.LightGray, shape = RoundedCornerShape(2.dp))
+            )
+        },
+        containerColor = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text(
+                text = "문자로 전송된\n인증번호를 입력해주세요",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(top = 16.dp, bottom = 30.dp)
+            )
+
+            // 인증번호 입력 필드
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = if (isAuthNumberFocused) MainBlue else TextFieldBorderGray,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .background(Color.White, shape = RoundedCornerShape(4.dp)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BasicTextField(
+                    value = authNumber,
+                    onValueChange = { if (it.length <= 6) authNumber = it },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                        .onFocusChanged { isAuthNumberFocused = it.isFocused }
+                ) { innerTextField ->
+                    if (authNumber.isEmpty()) {
+                        Text(
+                            text = "인증번호 6자리",
+                            color = TextFieldBorderGray
+                        )
+                    }
+                    innerTextField()
+                }
+
+                if (!isTimeout) {
+                    // 4. 인증번호 제한 시간 3분 타이머
+                    AuthTimer(
+                        modifier = Modifier.padding(end = 16.dp),
+                        onTimeout = { isTimeout = true }
+                    )
+                } else {
+                    Text(
+                        text = "00:00",
+                        color = TimeGray,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+                }
+
+            }
+
+            // '다시 보내기'
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "인증 문자를 받지 못하셨나요? ",
+                    color = TimeGray,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "다시 보내기",
+                    color = Black,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.clickable {
+                        onResend()
+                        isTimeout = false // 타이머 리셋 (실제로는 서버 응답에 따라)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // 4. 확인 버튼 (모달 하단에 고정)
+            Button(
+                onClick = {
+                    if (authNumber == "123456") { // 성공 조건 (더미)
+                        onAuthCompleted()
+                    } else {
+                        onAuthFailed()
+                    }
+                },
+                enabled = authNumber.length == 6 && !isTimeout,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(bottom = 32.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
+            ) {
+                Text("확인", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+// 📱 인증 상태 Enum
+sealed class PhoneAuthState {
+    data object Pending : PhoneAuthState()
+    data class Completed(val success: Boolean) : PhoneAuthState()
+}
+
+// 🚀 미리보기
+@Preview(showBackground = true)
+@Composable
+fun SignUpScreenPreview() {
+    NameInputScreen(rememberNavController())
 }
