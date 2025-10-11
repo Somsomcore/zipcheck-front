@@ -49,7 +49,6 @@ import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.PurpleGrey40
 import com.zipcheck.android.ui.theme.PurpleGrey80
 
-private val MainBlue = Color(0xFF448AFF)
 private val LightBlack = Color(0xFF0B0D0E)
 private val DarkBlack = Color(0xFF444C55)
 private val Gray = Color(0xFFE3E5E8)
