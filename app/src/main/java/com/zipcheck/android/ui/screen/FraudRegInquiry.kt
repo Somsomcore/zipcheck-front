@@ -100,6 +100,7 @@ fun FraudRegInquiryScreen(navController: NavHostController,
     // 1. Scaffold (Material3) for overall screen structure
     Scaffold(
         topBar = { CustomTopBar("사기 접수 수락", navController) },
+        containerColor = White,
         snackbarHost = { SnackbarHost(snackbarHostState) { data ->
             Snackbar(
                 snackbarData = data,
