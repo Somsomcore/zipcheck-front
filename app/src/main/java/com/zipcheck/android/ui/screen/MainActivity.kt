@@ -68,9 +68,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.zIndex
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.zipcheck.android.data.RiskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.BottomNavItem
 import com.zipcheck.android.ui.component.BottomNavigationBar
@@ -82,6 +85,8 @@ import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
 import kotlinx.coroutines.launch
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDate
 
@@ -119,7 +124,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "main_screen", //main_screen
+                        startDestination = "register_screen4", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -237,6 +242,60 @@ class MainActivity : ComponentActivity() {
                                 showBottomBar.value = false
                             }
                             RegisterScreen(navController = navController)
+                        }
+                        composable(
+                            route = "register_screen_2/{address}/{detailAddress}",
+                            arguments = listOf(
+                                navArgument("address") { type = NavType.StringType },
+                                navArgument("detailAddress") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            // RegisterScreen2는 BottomBar를 숨겨야 하므로 추가
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+
+                            val address = backStackEntry.arguments?.getString("address") ?: ""
+                            val detailAddress = backStackEntry.arguments?.getString("detailAddress") ?: ""
+
+                            RegisterScreen2(
+                                navController = navController,
+                                address = address,
+                                detailAddress = detailAddress
+                            )
+                        }
+
+
+                        composable(
+                            // 1. 라우트를 'register_screen_3'으로 하고, 하나의 인자(allDataJson)를 받도록 수정합니다.
+                            route = "register_screen_3/{allDataJson}",
+                            arguments = listOf(
+                                navArgument("allDataJson") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+
+                            // 2. 전달받은 인코딩된 JSON 문자열을 가져옵니다.
+                            val encodedJson = backStackEntry.arguments?.getString("allDataJson") ?: ""
+
+                            // 3. 디코딩하여 원래의 JSON 문자열로 복원합니다.
+                            val jsonString = URLDecoder.decode(encodedJson, StandardCharsets.UTF_8.name())
+
+                            // 4. JSON 문자열을 다시 Map 객체로 변환합니다.
+                            val gson = Gson()
+                            val mapType = object : TypeToken<Map<String, String?>>() {}.type
+                            val previousDataMap: Map<String, String?> = gson.fromJson(jsonString, mapType)
+
+                            // 5. 복원된 Map 데이터를 RegisterScreen3에 전달합니다.
+                            RegisterScreen3(
+                                navController = navController,
+                                previousData = previousDataMap
+                            )
+                        }
+                        composable("register_screen4") {
+                            RegisterScreen4(navController = navController)
                         }
                         composable("my_page") {
                             LaunchedEffect(Unit) {

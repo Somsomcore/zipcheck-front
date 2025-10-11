@@ -67,6 +67,9 @@ import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import kotlinx.coroutines.launch
+import kotlin.io.path.name
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -172,7 +175,18 @@ fun RegisterScreen(navController: NavHostController) {
 
                 // 다음 버튼
                 Button(
-                    onClick = { if (allFieldsFilled) navController.navigate( "" ) },
+                    onClick = {
+                        if (allFieldsFilled) {
+                            // 1. URL 경로로 사용하기 위해 값을 인코딩합니다.
+                            val encodedAddress =
+                                URLEncoder.encode(address, StandardCharsets.UTF_8.name())
+                            val encodedDetailAddress =
+                                URLEncoder.encode(detailAddress, StandardCharsets.UTF_8.name())
+
+                            // 2. 인코딩된 값을 포함하여 다음 화면으로 이동합니다.
+                            navController.navigate("register_screen_2/$encodedAddress/$encodedDetailAddress")
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp)
