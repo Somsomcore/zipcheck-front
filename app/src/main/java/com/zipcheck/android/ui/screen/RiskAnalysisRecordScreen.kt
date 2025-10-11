@@ -47,6 +47,7 @@ import com.zipcheck.android.data.RiskAnalysis.groupedResults
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.component.MonthYearPicker
 import com.zipcheck.android.ui.component.RiskResultCard
+import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
@@ -79,6 +80,7 @@ fun RiskAnalysisRecordScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(BGGray)
         ) {
             Spacer(
                 modifier = Modifier

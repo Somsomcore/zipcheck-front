@@ -61,7 +61,8 @@ fun LoginScreen(navController: NavController) {
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = Color.White
     ) { innerPadding ->
         Column(
             modifier = Modifier

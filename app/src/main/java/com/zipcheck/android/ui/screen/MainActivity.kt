@@ -77,6 +77,7 @@ import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
 import com.zipcheck.android.ui.component.TopReportsCarousel
+import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
@@ -118,23 +119,32 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "login_screen", //main_screen
+                        startDestination = "main_screen", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
                     ) {
                         //LoginScreen route
                         composable("login_screen") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             LoginScreen(navController = navController)
                         }
                         //LoginScreen_name route
                         composable("login_screen_name") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             NameInputScreen(navController = navController)
                         }
                         composable(
                             route = "login_screen_telecom/{name}",
                             arguments = listOf(navArgument("name") { type = NavType.StringType })
                         ) { backStackEntry ->
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
                             val name = backStackEntry.arguments?.getString("name")
                             if (name != null) {
                                 CarrierInputScreen(navController = navController, name = name)
@@ -230,7 +240,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("my_page") {
                             LaunchedEffect(Unit) {
-                                showBottomBar.value = true
+                                showBottomBar.value = false
                             }
                             MyPageScreen(navController = navController)
                         }
@@ -264,6 +274,7 @@ fun MainScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
+            .background(BGGray)
     ) {
         Spacer(Modifier.height(16.dp))
 

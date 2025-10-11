@@ -17,9 +17,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -41,8 +43,10 @@ import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
+import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.PurpleGrey80
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -124,6 +128,8 @@ fun NameInputScreen(navController: NavController) {
     }
 
     Scaffold(
+        topBar = { CustomTopBar("", navController as NavHostController) },
+        containerColor = Color.White,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
                 // 이미지의 팝업처럼 화면 하단 중앙에 나타나도록 커스텀
@@ -173,23 +179,14 @@ fun NameInputScreen(navController: NavController) {
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_back),
-                        contentDescription = "Back",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
                 // 제목
                 Text(
                     text = "계정 생성을 위해\n아래 정보를 입력해 주세요",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = 16.dp),
+                    color = Black
                 )
 
                 Spacer(modifier = Modifier.height(30.dp))
@@ -217,7 +214,11 @@ fun NameInputScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(30.dp))
 
                 // 2. 통신사 선택 필드
-                Text(text = "통신사", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "통신사",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Black
+                )
                 OutlinedTextField(
                     value = selectedCarrier,
                     onValueChange = { /* 텍스트 입력 방지 */ },
@@ -254,7 +255,8 @@ fun NameInputScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(30.dp))
 
                 // 3. 휴대폰 번호 입력 필드
-                Text(text = "휴대폰 번호", style = MaterialTheme.typography.titleMedium)
+                Text(text = "휴대폰 번호", style = MaterialTheme.typography.titleMedium,
+                    color = Black)
                 OutlinedTextField(
                     value = phoneNumber,
                     onValueChange = { if (it.length <= 11) phoneNumber = it }, // 11자리 제한
@@ -398,7 +400,8 @@ fun CarrierSelectionSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        dragHandle = null // 핸들 제거하여 이미지와 유사하게
+        dragHandle = null, // 핸들 제거하여 이미지와 유사하게
+        containerColor = Color.White
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -528,7 +531,6 @@ fun AuthNumberInputSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        // 이미지처럼 모달 상단이 살짝 튀어나온 디자인
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -540,112 +542,122 @@ fun AuthNumberInputSheet(
         },
         containerColor = Color.White
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
         ) {
-            Text(
-                text = "문자로 전송된\n인증번호를 입력해주세요",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.padding(top = 16.dp, bottom = 30.dp)
-            )
-
-            // 인증번호 입력 필드
-            Row(
+            // 본문: 스크롤 + 하단 버튼 공간만큼 여유 패딩
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        width = 1.dp,
-                        color = if (isAuthNumberFocused) MainBlue else TextFieldBorderGray,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .background(Color.White, shape = RoundedCornerShape(4.dp)),
-                verticalAlignment = Alignment.CenterVertically
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 120.dp) // 버튼 높이 + 여유
+                    .imePadding() // 키보드 올라올 때 안전
             ) {
-                BasicTextField(
-                    value = authNumber,
-                    onValueChange = { if (it.length <= 6) authNumber = it },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                Text(
+                    text = "문자로 전송된\n인증번호를 입력해주세요",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(bottom = 30.dp)
+                )
+
+                // 입력 박스 ...
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                        .onFocusChanged { isAuthNumberFocused = it.isFocused }
-                ) { innerTextField ->
-                    if (authNumber.isEmpty()) {
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = if (isAuthNumberFocused) MainBlue else TextFieldBorderGray,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .background(Color.White, shape = RoundedCornerShape(4.dp)),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BasicTextField(
+                        value = authNumber,
+                        onValueChange = { if (it.length <= 6) authNumber = it },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                            .onFocusChanged { isAuthNumberFocused = it.isFocused }
+                    ) { innerTextField ->
+                        if (authNumber.isEmpty()) {
+                            Text(text = "인증번호 6자리", color = TextFieldBorderGray)
+                        }
+                        innerTextField()
+                    }
+
+                    if (!isTimeout) {
+                        AuthTimer(
+                            modifier = Modifier.padding(end = 16.dp),
+                            onTimeout = { isTimeout = true }
+                        )
+                    } else {
                         Text(
-                            text = "인증번호 6자리",
-                            color = TextFieldBorderGray
+                            text = "00:00",
+                            color = TimeGray,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(end = 16.dp)
                         )
                     }
-                    innerTextField()
                 }
 
-                if (!isTimeout) {
-                    // 4. 인증번호 제한 시간 3분 타이머
-                    AuthTimer(
-                        modifier = Modifier.padding(end = 16.dp),
-                        onTimeout = { isTimeout = true }
-                    )
-                } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
                     Text(
-                        text = "00:00",
+                        text = "인증 문자를 받지 못하셨나요? ",
                         color = TimeGray,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(end = 16.dp)
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "다시 보내기",
+                        color = Black,
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.clickable {
+                            onResend()
+                            isTimeout = false
+                        }
                     )
                 }
-
             }
 
-            // '다시 보내기'
-            Row(
+            // 하단 고정 확인 버튼
+            Surface(
+                color = Color.White,
+                tonalElevation = 2.dp,
+                shadowElevation = 8.dp,
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.Start
+                    .navigationBarsPadding() // ✅ 제스처바 영역 고려
+                    .imePadding()            // ✅ 키보드가 올라올 때 밀어올림
             ) {
-                Text(
-                    text = "인증 문자를 받지 못하셨나요? ",
-                    color = TimeGray,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = "다시 보내기",
-                    color = Black,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.clickable {
-                        onResend()
-                        isTimeout = false // 타이머 리셋 (실제로는 서버 응답에 따라)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp) // Defined padding around button
+                ) {
+                    Button(
+                        onClick = {
+                            if (authNumber == "123456") onAuthCompleted() else onAuthFailed()
+                        },
+                        enabled = authNumber.length == 6 && !isTimeout,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MainBlue),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp) // Button height is now fixed and correctly padded by the Column
+                    ) {
+                        // FIX: Changed text color to White for better contrast
+                        Text("확인", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // 4. 확인 버튼 (모달 하단에 고정)
-            Button(
-                onClick = {
-                    if (authNumber == "123456") { // 성공 조건 (더미)
-                        onAuthCompleted()
-                    } else {
-                        onAuthFailed()
-                    }
-                },
-                enabled = authNumber.length == 6 && !isTimeout,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(bottom = 32.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MainBlue)
-            ) {
-                Text("확인", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

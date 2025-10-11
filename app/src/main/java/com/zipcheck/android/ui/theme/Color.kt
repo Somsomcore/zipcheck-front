@@ -29,6 +29,7 @@ val SectionGray = Color(0xFFF1F2F4)
 val BtNavGray = Color(0xFFAAB2BB)
 val BorderGray = Color(0xFFC7CCD1)
 val TopBar = Color(0xFFECECEC)
+val BGGray = Color(0xFFF5F6F9)
 
 val CircleBGGray = Color(0xFFEEEEEE)
 val CircleRed = Color(0xFFFF616D)
