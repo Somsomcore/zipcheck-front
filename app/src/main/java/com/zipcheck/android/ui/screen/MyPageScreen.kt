@@ -41,11 +41,8 @@ data class SettingsItem(val title: String, val onClick: () -> Unit)
 @Composable
 fun MyPageScreen(navController : NavHostController) {
     val menuItems = listOf(
-        SettingsItem(title = "프로필 변경", onClick = { println("프로필 변경 클릭") }),
         SettingsItem(title = "알림 설정", onClick = { println("알림 설정 클릭") }),
         SettingsItem(title = "내가 쓴 신고글", onClick = { println("신고글 클릭") }),
-        SettingsItem(title = "이용약관", onClick = { println("이용약관 클릭") }),
-        SettingsItem(title = "개인정보처리방침", onClick = { println("개인정보처리방침 클릭") }),
         SettingsItem(title = "로그아웃", onClick = { println("로그아웃 클릭") }),
     )
 
@@ -93,16 +90,6 @@ fun ProfileHeader() {
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // 프로필 이미지 (회색 원)
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .aspectRatio(1f)
-                    .background(TopBar, shape = CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
             // 닉네임 및 이메일
             Column {
                 Text(

@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -66,11 +65,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -82,6 +83,8 @@ import com.zipcheck.android.ui.component.SearchBarOverlay
 import com.zipcheck.android.ui.component.TopReportsCarousel
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.ExampleTextGray
+import com.zipcheck.android.ui.theme.HomeBG
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
 import kotlinx.coroutines.launch
@@ -347,7 +350,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(230.dp)
-                    .clickable(onClick = {navController.navigate("register")}),
+                    .clickable(onClick = {navController.navigate("search")}),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(4.dp),
@@ -376,7 +379,7 @@ fun MainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "사기 매물 등록 하기 ", // > 문자 제거
+                                "전세 위험도 확인하러 가기 ", // > 문자 제거
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White
                             )
@@ -488,6 +491,85 @@ fun MainScreen(
                 tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
                 autoScrollMillis = 3500L // 자동 넘김 주기
             )
+        }
+
+        Spacer(Modifier.height(32.dp))
+
+        // 신고 등록 카드
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clickable(onClick = { navController.navigate("register") }),
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            ) {
+                // Row 대신 Box로 배치 자유도 확보
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            HomeBG
+                        )
+                ) {
+
+                    // 좌측 텍스트
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 20.dp, top = 0.dp, bottom = 0.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "나쁜 경험은 함께 나누고",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp
+                        )
+                        Text(
+                            "위험한 계약은 미리 피할 수 있도록",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "3분 만에 내 경험 공유하고, 신고 등록하러 가기 ", // > 문자 제거
+                                style = MaterialTheme.typography.bodySmall,
+                                color = ExampleTextGray,
+                                fontSize = 10.sp
+                            )
+
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_next),
+                                contentDescription = "Go",
+                                tint = ExampleTextGray,
+                                modifier = Modifier.size(10.dp)
+                            )
+                        }
+                    }
+
+                    // ✅ 집 이미지는 Image로, 하단-오른쪽에 적당한 크기로
+                    Image(
+                        painter = painterResource(id = R.drawable.img_danger),
+                        contentDescription = "House",
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(top = 0.dp, bottom = 0.dp)
+                            .size(70.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(32.dp))
