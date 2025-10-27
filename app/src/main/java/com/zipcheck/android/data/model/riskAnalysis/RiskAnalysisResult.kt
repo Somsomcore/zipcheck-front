@@ -1,4 +1,4 @@
-package com.zipcheck.android.data.RiskAnalysis
+package com.zipcheck.android.data.model.riskAnalysis
 
 import java.time.LocalDate
 

@@ -1,10 +1,8 @@
 package com.zipcheck.android.ui.screen
 
-import android.R.id.tabs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,18 +19,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -40,19 +35,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.zipcheck.android.R
-import com.zipcheck.android.ui.theme.BackGround
-import com.zipcheck.android.ui.theme.BtNavGray
-import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
-import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Base64
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -66,17 +54,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.zipcheck.android.data.RiskAnalysis.RiskAnalysisResult
-import com.zipcheck.android.ui.component.BottomNavItem
+import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
@@ -87,10 +72,8 @@ import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.HomeBG
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
-import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {

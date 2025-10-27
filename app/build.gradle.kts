@@ -62,6 +62,10 @@ dependencies {
 
     // kakao map
     implementation("com.kakao.maps.open:android:2.12.18")
+//    implementation("com.kakao.vectormap:map:2.9.5")
+
+    // kakao login
+    implementation("com.kakao.sdk:v2-user:2.22.0")
 
     // 권한 요청
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
@@ -77,5 +81,8 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation("com.google.code.gson:gson:2.10.1")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
 }
