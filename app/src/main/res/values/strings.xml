@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">집책</string>
     <string name="NATIVE_APP_KEY">27a390b88de8addf26186be448a4eeb4</string>
+    <string name="Naver_Client_ID">4EyKmQgzlBtsH7Jw2vAk</string>
+    <string name="Naver_Client_SECRET">zVS7SnTK6v</string>
+    <string name="Naver_App_Name">zipcheck</string>
 </resources>

@@ -1,9 +1,9 @@
 package com.zipcheck.android.ui.screen
 
-import androidx.activity.result.launch
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,17 +28,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.zipcheck.android.R
 import androidx.navigation.NavController
+import com.kakao.sdk.common.model.ClientError
+import com.kakao.sdk.common.model.ClientErrorCause
+import com.zipcheck.android.R
+import com.kakao.sdk.user.UserApiClient
+import com.navercorp.nid.NaverIdLoginSDK
+import com.navercorp.nid.oauth.OAuthLoginCallback
+import com.zipcheck.android.ui.network.AuthService
+import com.zipcheck.android.ui.network.RetrofitClient
+import com.zipcheck.android.ui.network.SocialLoginRequest
+import com.zipcheck.android.ui.network.SocialLoginResponse
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Response
 
 @Composable
 fun LoginScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
+    val context = LocalContext.current
+    val service = RetrofitClient.authService
     // NameInputScreen으로부터 결과를 받아서 처리하는 부분
     val signupResult = navController.currentBackStackEntry
         ?.savedStateHandle
@@ -51,11 +59,9 @@ fun LoginScreen(navController: NavController) {
 
     LaunchedEffect(signupResult?.value) {
         if (signupResult?.value == "success") {
-            // 결과가 "success"이면 스낵바를 띄웁니다.
             scope.launch {
                 snackbarHostState.showSnackbar("회원가입이 완료되었습니다. 로그인을 진행해 주세요.")
             }
-            // 스낵바를 한 번만 보여주기 위해 사용한 데이터를 제거합니다.
             navController.currentBackStackEntry?.savedStateHandle?.remove<String>("signup_result_key")
         }
     }
@@ -68,7 +74,7 @@ fun LoginScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp), // 좌우 여백 약간 넓게
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 상단 뒤로가기 아이콘
@@ -86,7 +92,7 @@ fun LoginScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // 화면 상단-로고 사이 비율 확보
+            Spacer(modifier = Modifier.weight(1f))
 
             // 로고
             Image(
@@ -102,22 +108,14 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Divider(
-                    modifier = Modifier.weight(1f),
-                    color = Color.Gray,
-                    thickness = 1.dp
-                )
+                Divider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 1.dp)
                 Text(
                     text = "로그인 / 회원가입",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
-                Divider(
-                    modifier = Modifier.weight(1f),
-                    color = Color.Gray,
-                    thickness = 1.dp
-                )
+                Divider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 1.dp)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -129,8 +127,28 @@ fun LoginScreen(navController: NavController) {
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp) // 버튼 높이 고정
-                    .clickable { navController.navigate("login_screen_name") }
+                    .height(50.dp)
+                    .clickable {
+                        // 카카오톡이 설치되어 있으면 카카오톡으로 로그인, 아니면 카카오계정으로 로그인
+                        if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                            UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+                                if (error != null) {
+                                    // 사용자가 로그인 취소했는지 확인
+                                    if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
+                                        Toast.makeText(context, "로그인이 취소되었습니다.", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "카카오 로그인 실패: ${error.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else if (token != null) {
+                                    // ✅ 카카오톡 로그인 성공
+                                    handleKakaoLogin(token.accessToken, service, context, navController)
+                                }
+                            }
+                        } else {
+                            // 카카오톡이 없으면 바로 카카오 계정으로 로그인 시도
+                            loginWithKakaoAccount(context, service, navController)
+                        }
+                    }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -142,11 +160,129 @@ fun LoginScreen(navController: NavController) {
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp) // 버튼 높이 고정
-                    .clickable { /* 네이버 로그인 로직 */ }
+                    .height(50.dp)
+                    .clickable {
+                        NaverIdLoginSDK.authenticate(context, object : OAuthLoginCallback {
+                            override fun onSuccess() {
+                                val accessToken = NaverIdLoginSDK.getAccessToken()
+                                if (accessToken != null) {
+                                    handleNaverLogin(accessToken, service, context, navController)
+                                } else {
+                                    Toast.makeText(context, "토큰을 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onFailure(httpStatus: Int, message: String) {
+                                Toast.makeText(context, "네이버 로그인 실패: $message", Toast.LENGTH_SHORT).show()
+                            }
+
+                            override fun onError(errorCode: Int, message: String) {
+                                Toast.makeText(context, "네이버 로그인 에러: $message", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    }
             )
 
             Spacer(modifier = Modifier.weight(2f)) // 화면 하단과 버튼 사이 여유 공간
         }
     }
+}
+
+// 카카오 계정(웹)으로 로그인하는 공통 처리 함수
+private fun loginWithKakaoAccount(
+    context: Context,
+    service: AuthService,
+    navController: NavController
+) {
+    UserApiClient.instance.loginWithKakaoAccount(context) { token, error ->
+        if (error != null) {
+            Toast.makeText(context, "카카오 로그인 실패: ${error.message}", Toast.LENGTH_SHORT).show()
+        } else if (token != null) {
+            handleKakaoLogin(token.accessToken, service, context, navController)
+        }
+    }
+}
+
+private fun handleKakaoLogin(
+    accessToken: String,
+    service: AuthService,
+    context: Context,
+    navController: NavController
+) {
+    val request = SocialLoginRequest("KAKAO", accessToken)
+
+    service.socialLogin(request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+        override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.isSuccess == true) {
+                    val user = body.result?.user
+                    if (user?.name.isNullOrBlank()) {
+                        navController.navigate("login_screen_name")
+                    } else {
+                        Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
+                        val sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                        with(sharedPrefs.edit()) {
+                            putString("accessToken", body.result?.accessToken)
+                            putString("refreshToken", body.result?.refreshToken)
+                            apply()
+                        }
+                        navController.navigate("main_screen") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                } else {
+                    Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "응답 오류", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun onFailure(call: Call<SocialLoginResponse>, t: Throwable) {
+            Toast.makeText(context, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
+        }
+    })
+}
+
+private fun handleNaverLogin(
+    accessToken: String,
+    service: AuthService,
+    context: Context,
+    navController: NavController
+) {
+    val request = SocialLoginRequest("NAVER", accessToken)
+
+    service.socialLogin(request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+        override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.isSuccess == true) {
+                    val user = body.result?.user
+                    if (user?.name.isNullOrBlank()) {
+                        navController.navigate("login_screen_name")
+                    } else {
+                        Toast.makeText(context, "네이버 로그인 성공!", Toast.LENGTH_SHORT).show()
+                        val sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                        with(sharedPrefs.edit()) {
+                            putString("accessToken", body.result?.accessToken)
+                            putString("refreshToken", body.result?.refreshToken)
+                            apply()
+                        }
+                        navController.navigate("main_screen") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                } else {
+                    Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "응답 오류", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun onFailure(call: Call<SocialLoginResponse>, t: Throwable) {
+            Toast.makeText(context, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
+        }
+    })
 }
