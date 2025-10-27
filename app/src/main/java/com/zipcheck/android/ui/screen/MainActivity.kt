@@ -124,7 +124,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "register_screen4", //main_screen
+                        startDestination = "login_screen", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
