@@ -61,11 +61,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
-import com.zipcheck.android.ui.component.TopReportsCarousel
+import com.zipcheck.android.ui.component.home.TopReportsCarousel
+import com.zipcheck.android.ui.component.home.TopReportsSection
+import com.zipcheck.android.ui.state.TopReportsUiState
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
@@ -110,7 +113,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "register_screen4", //main_screen
+                        startDestination = "main_screen", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -311,10 +314,6 @@ fun MainScreen(
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
 
-    val tabs = listOf("아파트", "오피스텔", "빌라")
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
-    val scope = rememberCoroutineScope()
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -456,25 +455,68 @@ fun MainScreen(
 
         Spacer(Modifier.height(50.dp))
 
-        // 3) 피해 신고 집중 접수 주소지 TOP: K/지 Placeholder
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            Text(
-                "피해 신고 집중 접수 주소지 TOP 5",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Black
-            )
+//        Column(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 16.dp)
+//        ) {
+//            Text(
+//                "피해 신고 집중 접수 주소지 TOP 5",
+//                style = MaterialTheme.typography.titleMedium,
+//                color = Color.Black
+//            )
+//
+//            Spacer(Modifier.height(16.dp))
+//
+////            TopReportsCarousel(
+////                tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
+////                autoScrollMillis = 3500L // 자동 넘김 주기
+////            )
+//            when (val state = topReportsState) {
+//                is TopReportsUiState.Loading -> {
+//                    Text("데이터를 불러오는 중...", color = ExampleTextGray)
+//                    Spacer(Modifier.height(16.dp))
+//                }
+//
+//                is TopReportsUiState.Error -> {
+//                    // Show an error message
+//                    Text("TOP 5 정보를 불러오지 못했습니다.", color = Color.Red)
+//                    Spacer(Modifier.height(16.dp))
+//                }
+//
+//                is TopReportsUiState.Success -> {
+//                    val items = state.items
+//
+//                    LaunchedEffect(items) {
+//                        if (items.isNotEmpty() && selectedTypeId == null) {
+//                            selectedTypeId = items.first().typeId
+//                        }
+//                    }
+//
+//                    TopReportsCarousel(
+//                        items = items,
+//                        autoScrollMillis = 3500L,
+//                        onItemSelected = { typeId ->
+//                            selectedTypeId = typeId
+//                            println("Carousel에서 선택된 주택 유형 ID: $typeId")
+//                        }
+//                    )
+//                }
+//            }
+//        }
 
-            Spacer(Modifier.height(16.dp))
-
-            TopReportsCarousel(
-                tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
-                autoScrollMillis = 3500L // 자동 넘김 주기
-            )
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val reportService = remember {
+            com.zipcheck.android.data.network.RetrofitObj
+                .getRetrofit(context)
+                .create(ReportService::class.java)
         }
+        val accessToken = remember { "YOUR_JWT_ACCESS_TOKEN" }
+
+        HomeTop5Block(
+            reportService = reportService,
+            accessToken = accessToken
+        )
 
         Spacer(Modifier.height(32.dp))
 
@@ -612,4 +654,16 @@ fun MainScreen(
             navController = navController
         )
     }
+}
+
+@Composable
+fun HomeTop5Block(
+    reportService: ReportService,
+    accessToken: String // 서버 토큰
+) {
+    TopReportsSection(
+        reportService = reportService,
+        accessToken = accessToken,          // "Bearer " 안붙였어도 자동으로 붙여줌
+        addBearerIfMissing = true
+    )
 }
