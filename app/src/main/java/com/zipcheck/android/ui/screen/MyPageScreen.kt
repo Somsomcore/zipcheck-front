@@ -146,7 +146,7 @@ fun ProfileHeader(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // 구글 아이콘 Placeholder (실제 아이콘 리소스 필요)
-                    if (oath == "Kakao") {
+                    if (oath == "KAKAO") {
                         Box(
                             modifier = Modifier
                                 .size(12.dp)
@@ -156,7 +156,7 @@ fun ProfileHeader(
                                 contentDescription = "kakao"
                             )
                         }
-                    } else if (oath == "Naver"){
+                    } else if (oath == "NAVER"){
                         Box(
                             modifier = Modifier
                                 .size(12.dp)
