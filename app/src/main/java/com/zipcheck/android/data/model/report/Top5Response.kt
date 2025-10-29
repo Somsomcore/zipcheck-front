@@ -17,7 +17,7 @@ data class Top5Report(
     @SerializedName("reportId") val reportId: Int? = null,
     @SerializedName("addr") val address: String? = null,
     @SerializedName("addrDetail") val addressDetail: String? = null,
-    @SerializedName("classification") val classifications: List<Classification>? = null,
+    @SerializedName("classifications") val classifications: List<Classification>? = null,
     @SerializedName("contractType") val contractType: Int? = null,
     @SerializedName("count") val count: Int? = null
 )
@@ -59,11 +59,9 @@ fun Top5Report.toReportItem(): ReportItem {
         .mapNotNull { it.classification?.let(CLASSIFICATION_TAG_MAP::get) }
         .take(2)
 
-    val (chip1, chip2) = when (tags.size) {
-        0 -> "#분류없음" to "#분류없음"
-        1 -> tags[0] to "#분류없음"
-        else -> tags[0] to tags[1]
-    }
+    // ✅ tags 크기에 따라 안전하게 chip 설정
+    val chip1 = tags.getOrNull(0) ?: "#분류없음"
+    val chip2 = tags.getOrNull(1) ?: "#분류없음"
 
     return ReportItem(
         typeId = typeId,
