@@ -41,15 +41,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+// import com.google.android.gms.common.api.Response // 이 임포트도 Retrofit의 Response와 충돌할 수 있으므로 제거
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.network.RetrofitClient
+import com.zipcheck.android.ui.network.VerificationCodeRequest
+import com.zipcheck.android.ui.network.VerificationCodeResponse
+import com.zipcheck.android.ui.network.VerifyCodeRequest
+import com.zipcheck.android.ui.network.VerifyCodeResponse
 import com.zipcheck.android.ui.theme.PurpleGrey80
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+// 1. Retrofit의 Call과 Response를 명시적으로 임포트
+import retrofit2.Call
+import retrofit2.Response
 import kotlin.math.abs
 import kotlin.text.find
 import kotlin.text.toFloat
@@ -101,7 +111,7 @@ fun AuthTimer(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NameInputScreen(navController: NavController) {
-    val carriers = remember { listOf("SKT", "KT", "LG U+", "SKT 알뜰폰", "KT 알뜰폰", "LG U+ 알뜰폰") }
+    val carriers = remember { listOf("SKT", "KT", "LG U+", "SKT 알뜰폰", "KT 알뜰폰", "LG U+ 알뜰폰", "SKT") }
 
     // 🌟 상태 변수
     var name by remember { mutableStateOf("") } // 첫번째 그림의 예시값
@@ -280,14 +290,33 @@ fun NameInputScreen(navController: NavController) {
                             onClick = {
                                 focusManager.clearFocus()
                                 if (phoneNumber.isBlank()) {
-                                    // 3. 휴대폰 번호 미입력 시 팝업
                                     showSnackbar("휴대폰 번호가 입력되지 않았습니다.")
-                                } else if (phoneAuthState is PhoneAuthState.Completed) {
-                                    // 이미 인증 완료 상태면 아무것도 안 함
-                                    return@Button
                                 } else {
-                                    // 4. 휴대폰 번호 입력 시 인증번호 모달 띄우기
-                                    isAuthSheetVisible = true
+                                    // 📡 인증번호 요청 API 호출
+                                    val request = VerificationCodeRequest(phone = phoneNumber)
+                                    RetrofitClient.authService.sendVerificationCode(request)
+                                        .enqueue(object :
+                                            retrofit2.Callback<VerificationCodeResponse> {
+                                            override fun onResponse(
+                                                // 1. retrofit2.Call 사용
+                                                call: Call<VerificationCodeResponse>,
+                                                response: Response<VerificationCodeResponse>
+                                            ) {
+                                                if (response.isSuccessful && response.body()?.isSuccess == true) {
+                                                    showSnackbar("인증번호가 발송되었습니다.")
+                                                    isAuthSheetVisible = true
+                                                } else {
+                                                    showSnackbar("문자 발송 실패: ${response.body()?.message ?: response.message()}")
+                                                }
+                                            }
+
+                                            override fun onFailure(
+                                                call: Call<VerificationCodeResponse>,
+                                                t: Throwable
+                                            ) {
+                                                showSnackbar("네트워크 오류: ${t.message}")
+                                            }
+                                        })
                                 }
                             },
                             // 인증 완료 상태일 경우 버튼 모양 변경
@@ -346,17 +375,21 @@ fun NameInputScreen(navController: NavController) {
             onDismiss = { isAuthSheetVisible = false },
             onAuthCompleted = {
                 phoneAuthState = PhoneAuthState.Completed(true)
+                showSnackbar("인증이 완료되었습니다.") // 인증 완료 스낵바 추가
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
                     if (!sheetState.isVisible) isAuthSheetVisible = false
                 }
             },
-            onAuthFailed = {
+            // 5. onAuthFailed가 메시지를 받도록 수정
+            onAuthFailed = { message ->
                 // 5. 인증번호 틀릴 시 팝업
-                showSnackbar("잘못된 인증번호입니다. 다시 입력해주세요.")
+                showSnackbar(message)
             },
             onResend = {
                 // "다시 보내기" 로직 (타이머 리셋 등)
                 println("인증번호 다시 보내기 요청")
+                // TODO: 여기에 실제 재전송 API 호출 로직을 구현
+                showSnackbar("인증번호를 다시 전송합니다.")
             }
         )
     }
@@ -368,17 +401,19 @@ fun NameInputScreen(navController: NavController) {
 fun CarrierSelectionSheet(
     sheetState: SheetState,
     carriers: List<String>,
-    selectedCarrier: String,    onDismiss: () -> Unit,
+    selectedCarrier: String,
+    onDismiss: () -> Unit,
     onCarrierConfirmed: (String) -> Unit
 ) {
-    // 1. 초기 스크롤 위치 설정을 위한 상태
-    val initialIndex = carriers.indexOf(selectedCarrier).takeIf { it != -1 } ?: (carriers.size / 2)
+    // 1. 초기 스크롤 위치 설정을 위한 상태 (선택된 항목이 없으면 0)
+    val initialIndex = carriers.indexOf(selectedCarrier).coerceAtLeast(0)
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
 
     // 2. 현재 선택된 항목을 임시로 저장
     var tempSelectedCarrier by remember { mutableStateOf(selectedCarrier) }
     val scope = rememberCoroutineScope()
     var currentCenteredCarrier by remember { mutableStateOf(selectedCarrier) }
+
     // 3. 스크롤이 멈췄을 때 중앙 항목을 선택된 것으로 처리
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
@@ -390,7 +425,7 @@ fun CarrierSelectionSheet(
                 }
                 centerItem?.let {
                     if (it.index < carriers.size) {
-                        currentCenteredCarrier = carriers[it.index]
+                        currentCenteredCarrier = carriers[it.index] // 스크롤 멈추면 중앙 항목을 임시 선택
                     }
                 }
             }
@@ -421,21 +456,26 @@ fun CarrierSelectionSheet(
                 itemsIndexed(carriers) { index, carrier ->
                     val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
                     val currentItemInfo = visibleItemsInfo.find { it.index == index }
-                    val viewportCenter = (itemHeight.value).toInt()
 
-                    val isSelected = currentItemInfo?.let {
-                        val centerOfItem = it.offset + it.size / 2
-                        // 모든 보이는 아이템 중에서 현재 아이템이 중앙에 가장 가까운지 확인
-                        visibleItemsInfo.minByOrNull { item -> abs((item.offset + item.size / 2) - viewportCenter) }?.index == index
-                    } ?: false
+                    // 3. 중앙 아이템 계산 로직 수정 (현재 중앙에 가장 가까운 아이템 인덱스)
+                    val centeredIndex = currentItemInfo?.let {
+                        val viewportCenter = listState.layoutInfo.viewportSize.height / 2
+                        visibleItemsInfo.minByOrNull { item -> abs((item.offset + item.size / 2) - viewportCenter) }?.index
+                    }
+                    val isSelected = (centeredIndex == index)
+
                     // 중앙으로부터의 거리를 계산하여 그래픽 효과 적용
                     val (scale, alpha) = currentItemInfo?.let {
+                        val viewportCenter = listState.layoutInfo.viewportSize.height / 2
                         val itemCenter = it.offset + it.size / 2
                         val distance = abs(viewportCenter - itemCenter).toFloat()
                         // 거리에 따른 스케일과 알파값 계산 (중앙일수록 1.0, 멀수록 작아짐)
-                        val maxDistance = viewportCenter.toFloat()
-                        val scale = (1f - (distance / maxDistance).coerceAtMost(0.4f)).coerceIn(0.6f, 1.2f) // 중앙 항목을 약간 더 크게
-                        val alpha = (1f - (distance / maxDistance).coerceAtMost(0.7f)).coerceIn(0.3f, 1f)
+                        val maxDistance = viewportCenter.toFloat().coerceAtLeast(1f) // 0으로 나누기 방지
+                        // 거리가 뷰포트 절반을 넘어가면 효과를 최대치로 적용
+                        val normalizedDistance = (distance / maxDistance).coerceAtMost(1f)
+
+                        val scale = (1f - (normalizedDistance * 0.4f)).coerceIn(0.6f, 1.0f) // 중앙 1.0, 가장자리 0.6
+                        val alpha = (1f - (normalizedDistance * 0.7f)).coerceIn(0.3f, 1.0f) // 중앙 1.0, 가장자리 0.3
                         scale to alpha
                     } ?: (0.6f to 0.3f) // 화면에 안 보이는 항목의 기본값
 
@@ -471,12 +511,11 @@ fun CarrierSelectionSheet(
             }
 
 
-            // 하단 버튼 (취소/확인) - 기존 코드 유지
+            // 하단 버튼 (취소/확인)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                // .padding(top = 16.dp) // 목록과 버튼 사이 간격 제거 또는 조정
             ) {
                 // 취소 버튼
                 Button(
@@ -495,19 +534,23 @@ fun CarrierSelectionSheet(
                     Text("취소", color = Black, fontWeight = FontWeight.Bold)
                 }
 
-                // 확인 버튼
+                // 2. 확인 버튼 (잘못된 인증 로직 제거)
                 Button(
-                    onClick = { onCarrierConfirmed(currentCenteredCarrier) },
-                    enabled = currentCenteredCarrier.isNotBlank(),
+                    onClick = {
+                        // 3. 스크롤이 멈췄을 때 중앙에 있던 항목(currentCenteredCarrier)을 콜백으로 전달
+                        onCarrierConfirmed(currentCenteredCarrier)
+                    },
+                    // 2. modifier, shape, enabled 수정
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(),
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(0.dp), // '취소'와 통일
                     colors = ButtonDefaults.buttonColors(containerColor = MainBlue),
-                    border = BorderStroke(0.5.dp, TextFieldBorderGray)
+                    enabled = true // 항상 활성화
                 ) {
                     Text("확인", color = Color.White, fontWeight = FontWeight.Bold)
                 }
+
             }
         }
     }
@@ -521,9 +564,10 @@ fun AuthNumberInputSheet(
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onAuthCompleted: () -> Unit,
-    onAuthFailed: () -> Unit,
+    onAuthFailed: (message: String) -> Unit, // 5. 실패 메시지를 전달받도록 수정
     onResend: () -> Unit
 ) {
+    // 3. authNumber, isTimeout 변수 선언 (오류 해결)
     var authNumber by remember { mutableStateOf("") }
     var isAuthNumberFocused by remember { mutableStateOf(false) }
     var isTimeout by remember { mutableStateOf(false) }
@@ -645,8 +689,32 @@ fun AuthNumberInputSheet(
                 ) {
                     Button(
                         onClick = {
-                            if (authNumber == "123456") onAuthCompleted() else onAuthFailed()
+                            val request = VerifyCodeRequest(authNumber)
+                            RetrofitClient.authService.verifyCode(request)
+                                .enqueue(object : retrofit2.Callback<VerifyCodeResponse> {
+                                    override fun onResponse(
+                                        call: Call<VerifyCodeResponse>, // 1. retrofit2.Call
+                                        response: Response<VerifyCodeResponse> // 1. retrofit2.Response
+                                    ) {
+                                        // 4. VerifyCodeGResponse -> VerifyCodeResponse
+                                        if (response.isSuccessful && response.body()?.isSuccess == true) {
+                                            onAuthCompleted() // 3. 성공 콜백 호출
+                                        } else {
+                                            // 3. 실패 콜백 호출 (메시지 전달)
+                                            onAuthFailed("잘못된 인증번호입니다. 다시 입력해주세요.")
+                                        }
+                                    }
+
+                                    override fun onFailure(
+                                        call: Call<VerifyCodeResponse>,
+                                        t: Throwable
+                                    ) {
+                                        // 3. 실패 콜백 호출 (메시지 전달)
+                                        onAuthFailed("네트워크 오류: ${t.message}")
+                                    }
+                                })
                         },
+                        // 3. authNumber, isTimeout 참조 오류 해결
                         enabled = authNumber.length == 6 && !isTimeout,
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MainBlue),
@@ -655,7 +723,7 @@ fun AuthNumberInputSheet(
                             .height(56.dp) // Button height is now fixed and correctly padded by the Column
                     ) {
                         // FIX: Changed text color to White for better contrast
-                        Text("확인", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("확인", color = Color.White, fontWeight = FontWeight.Bold) // 검은색 -> 흰색
                     }
                 }
             }
