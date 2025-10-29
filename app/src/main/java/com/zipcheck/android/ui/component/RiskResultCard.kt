@@ -10,12 +10,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.zipcheck.android.data.RiskAnalysis.RiskAnalysisResult
+import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.screen.RiskLevelSection
 import com.zipcheck.android.ui.theme.BorderGray
 import com.zipcheck.android.ui.theme.CircleGreen

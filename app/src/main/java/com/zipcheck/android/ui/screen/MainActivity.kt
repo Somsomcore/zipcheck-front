@@ -1,10 +1,8 @@
 package com.zipcheck.android.ui.screen
 
-import android.R.id.tabs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,19 +19,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -41,19 +35,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.zipcheck.android.R
-import com.zipcheck.android.ui.theme.BackGround
-import com.zipcheck.android.ui.theme.BtNavGray
-import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
-import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Base64
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -66,28 +53,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.zipcheck.android.data.RiskAnalysis.RiskAnalysisResult
-import com.zipcheck.android.ui.component.BottomNavItem
+import com.zipcheck.android.data.api.ReportService
+import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
-import com.zipcheck.android.ui.component.TopReportsCarousel
+import com.zipcheck.android.ui.component.home.TopReportsCarousel
+import com.zipcheck.android.ui.component.home.TopReportsSection
+import com.zipcheck.android.ui.state.TopReportsUiState
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.ExampleTextGray
+import com.zipcheck.android.ui.theme.HomeBG
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
-import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -124,7 +113,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "login_screen", //main_screen
+                        startDestination = "main_screen", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -325,10 +314,6 @@ fun MainScreen(
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
 
-    val tabs = listOf("아파트", "오피스텔", "빌라")
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
-    val scope = rememberCoroutineScope()
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -347,7 +332,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(230.dp)
-                    .clickable(onClick = {navController.navigate("register")}),
+                    .clickable(onClick = {navController.navigate("search")}),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(4.dp),
@@ -376,7 +361,7 @@ fun MainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "사기 매물 등록 하기 ", // > 문자 제거
+                                "전세 위험도 확인하러 가기 ", // > 문자 제거
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White
                             )
@@ -470,24 +455,146 @@ fun MainScreen(
 
         Spacer(Modifier.height(50.dp))
 
-        // 3) 피해 신고 집중 접수 주소지 TOP: K/지 Placeholder
-        Column(
+//        Column(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 16.dp)
+//        ) {
+//            Text(
+//                "피해 신고 집중 접수 주소지 TOP 5",
+//                style = MaterialTheme.typography.titleMedium,
+//                color = Color.Black
+//            )
+//
+//            Spacer(Modifier.height(16.dp))
+//
+////            TopReportsCarousel(
+////                tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
+////                autoScrollMillis = 3500L // 자동 넘김 주기
+////            )
+//            when (val state = topReportsState) {
+//                is TopReportsUiState.Loading -> {
+//                    Text("데이터를 불러오는 중...", color = ExampleTextGray)
+//                    Spacer(Modifier.height(16.dp))
+//                }
+//
+//                is TopReportsUiState.Error -> {
+//                    // Show an error message
+//                    Text("TOP 5 정보를 불러오지 못했습니다.", color = Color.Red)
+//                    Spacer(Modifier.height(16.dp))
+//                }
+//
+//                is TopReportsUiState.Success -> {
+//                    val items = state.items
+//
+//                    LaunchedEffect(items) {
+//                        if (items.isNotEmpty() && selectedTypeId == null) {
+//                            selectedTypeId = items.first().typeId
+//                        }
+//                    }
+//
+//                    TopReportsCarousel(
+//                        items = items,
+//                        autoScrollMillis = 3500L,
+//                        onItemSelected = { typeId ->
+//                            selectedTypeId = typeId
+//                            println("Carousel에서 선택된 주택 유형 ID: $typeId")
+//                        }
+//                    )
+//                }
+//            }
+//        }
+
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val reportService = remember {
+            com.zipcheck.android.data.network.RetrofitObj
+                .getRetrofit(context)
+                .create(ReportService::class.java)
+        }
+        val accessToken = remember { "YOUR_JWT_ACCESS_TOKEN" }
+
+        HomeTop5Block(
+            reportService = reportService,
+            accessToken = accessToken
+        )
+
+        Spacer(Modifier.height(32.dp))
+
+        // 신고 등록 카드
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
         ) {
-            Text(
-                "피해 신고 집중 접수 주소지 TOP 5",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Black
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clickable(onClick = { navController.navigate("register") }),
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            ) {
+                // Row 대신 Box로 배치 자유도 확보
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            HomeBG
+                        )
+                ) {
 
-            Spacer(Modifier.height(16.dp))
+                    // 좌측 텍스트
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 20.dp, top = 0.dp, bottom = 0.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "나쁜 경험은 함께 나누고",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp
+                        )
+                        Text(
+                            "위험한 계약은 미리 피할 수 있도록",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "3분 만에 내 경험 공유하고, 신고 등록하러 가기 ", // > 문자 제거
+                                style = MaterialTheme.typography.bodySmall,
+                                color = ExampleTextGray,
+                                fontSize = 10.sp
+                            )
 
-            TopReportsCarousel(
-                tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
-                autoScrollMillis = 3500L // 자동 넘김 주기
-            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_next),
+                                contentDescription = "Go",
+                                tint = ExampleTextGray,
+                                modifier = Modifier.size(10.dp)
+                            )
+                        }
+                    }
+
+                    // ✅ 집 이미지는 Image로, 하단-오른쪽에 적당한 크기로
+                    Image(
+                        painter = painterResource(id = R.drawable.img_danger),
+                        contentDescription = "House",
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(top = 0.dp, bottom = 0.dp)
+                            .size(70.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(32.dp))
@@ -547,4 +654,16 @@ fun MainScreen(
             navController = navController
         )
     }
+}
+
+@Composable
+fun HomeTop5Block(
+    reportService: ReportService,
+    accessToken: String // 서버 토큰
+) {
+    TopReportsSection(
+        reportService = reportService,
+        accessToken = accessToken,          // "Bearer " 안붙였어도 자동으로 붙여줌
+        addBearerIfMissing = true
+    )
 }

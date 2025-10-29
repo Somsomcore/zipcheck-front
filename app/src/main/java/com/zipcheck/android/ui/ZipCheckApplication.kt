@@ -16,6 +16,7 @@ class ZipCheckApplication : Application() {
         val nativeAppKey = getString(R.string.NATIVE_APP_KEY)
         KakaoSdk.init(this, nativeAppKey)
         KakaoMapSdk.init(this, nativeAppKey)
+        
         val keyHash = Utility.getKeyHash(this)
         Log.d("KAKAO_KEY_HASH", "keyHash = $keyHash")
         NaverIdLoginSDK.initialize(
