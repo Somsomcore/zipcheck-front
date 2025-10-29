@@ -67,6 +67,9 @@ dependencies {
     // kakao login
     implementation("com.kakao.sdk:v2-user:2.22.0")
 
+    //naver login
+    implementation("com.navercorp.nid:oauth:5.9.0")
+
     // 권한 요청
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     implementation("com.google.maps.android:maps-compose:2.11.4")
@@ -81,6 +84,9 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation("com.google.code.gson:gson:2.10.1")
+    //retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
