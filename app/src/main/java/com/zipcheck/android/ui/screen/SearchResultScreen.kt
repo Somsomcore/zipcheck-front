@@ -60,7 +60,7 @@ fun SearchResultScreen(navController: NavHostController) {
     Scaffold(
         containerColor = White,
         topBar = {
-            CustomTopBar("분석 결과", navController)
+            CustomTopBar("분석 결과", navController, "main_screen")
         }
     ) { innerPadding ->
         // 화면 전체를 Column으로 구성

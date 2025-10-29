@@ -28,6 +28,7 @@ import com.zipcheck.android.ui.theme.White
 fun CustomTopBar(
     title: String = "",
     navController: NavHostController,
+    navigateTo: String? = null, // 🔹 추가
 ) {
     Box(
         modifier = Modifier
@@ -45,7 +46,16 @@ fun CustomTopBar(
                 .align(Alignment.CenterStart)
                 .size(24.dp)
                 .padding(start = 4.dp)
-                .clickable { navController.popBackStack() } // 클릭 시 이전 화면으로 돌아감
+                .clickable {
+                    if (navigateTo != null) {
+                        navController.navigate(navigateTo) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
+                }
         )
         // 화면 제목
         Text(

@@ -45,12 +45,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,13 +60,13 @@ import androidx.compose.ui.zIndex
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.zipcheck.android.data.api.ReportService
+import com.zipcheck.android.data.model.mypage.MyReportItem
+import com.zipcheck.android.data.model.mypage.MyReportTab
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
-import com.zipcheck.android.ui.component.home.TopReportsCarousel
 import com.zipcheck.android.ui.component.home.TopReportsSection
-import com.zipcheck.android.ui.state.TopReportsUiState
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
@@ -292,6 +290,27 @@ class MainActivity : ComponentActivity() {
                             }
                             MyPageScreen(navController = navController)
                         }
+                        composable("my_register_screen") {
+                            LaunchedEffect(Unit) {
+                                showBottomBar.value = false
+                            }
+
+                            // 더미 데이터 (원하면 비워도 됨)
+                            val receivedItems = emptyList<MyReportItem>()
+                            val registeredItems = listOf(null
+//                                MyReportItem(
+//                                    id = 1,
+//                                    typeName = "오피스텔",
+//                                    address = "경기도 구리시 검암로 27번길 34"
+//                                    reporter = "이태호",
+//                                    status = "대기중",
+//                                    date = "2025.12.12",
+//                                    chip1 = "#깡통전세"
+//                                )
+                                // ... 추가 가능
+                            )
+                            MyRegisterScreen(navController = navController, receivedItems, registeredItems, defaultTab = MyReportTab.RECEIVED)
+                        }
                     }
                 }
             }
@@ -454,56 +473,6 @@ fun MainScreen(
         }
 
         Spacer(Modifier.height(50.dp))
-
-//        Column(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 16.dp)
-//        ) {
-//            Text(
-//                "피해 신고 집중 접수 주소지 TOP 5",
-//                style = MaterialTheme.typography.titleMedium,
-//                color = Color.Black
-//            )
-//
-//            Spacer(Modifier.height(16.dp))
-//
-////            TopReportsCarousel(
-////                tabs = listOf("아파트", "오피스텔", "빌라", "4", "5"),
-////                autoScrollMillis = 3500L // 자동 넘김 주기
-////            )
-//            when (val state = topReportsState) {
-//                is TopReportsUiState.Loading -> {
-//                    Text("데이터를 불러오는 중...", color = ExampleTextGray)
-//                    Spacer(Modifier.height(16.dp))
-//                }
-//
-//                is TopReportsUiState.Error -> {
-//                    // Show an error message
-//                    Text("TOP 5 정보를 불러오지 못했습니다.", color = Color.Red)
-//                    Spacer(Modifier.height(16.dp))
-//                }
-//
-//                is TopReportsUiState.Success -> {
-//                    val items = state.items
-//
-//                    LaunchedEffect(items) {
-//                        if (items.isNotEmpty() && selectedTypeId == null) {
-//                            selectedTypeId = items.first().typeId
-//                        }
-//                    }
-//
-//                    TopReportsCarousel(
-//                        items = items,
-//                        autoScrollMillis = 3500L,
-//                        onItemSelected = { typeId ->
-//                            selectedTypeId = typeId
-//                            println("Carousel에서 선택된 주택 유형 ID: $typeId")
-//                        }
-//                    )
-//                }
-//            }
-//        }
 
         val context = androidx.compose.ui.platform.LocalContext.current
         val reportService = remember {

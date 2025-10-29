@@ -62,13 +62,31 @@ fun ReportCard(
                 Spacer(Modifier.height(30.dp))
 
                 Row {
-                    if (chip1 != null) {
-                        SoftChip(text = chip1, bg = Color(0xFFFFF3C4), fg = Color(0xFF9F7A00))
+//                    if (chip1 != null) {
+//                        SoftChip(text = chip1, bg = Color(0xFFFFF3C4), fg = Color(0xFF9F7A00))
+//                        Spacer(Modifier.width(8.dp))
+//                    }
+//
+//                    if (chip2 != null) {
+//                        SoftChip(text = chip2, bg = Color(0xFFFFF3C4), fg = Color(0xFF9F7A00))
+//                    }
+                    if (!chip1.isNullOrBlank() && chip1 != "#분류없음") {
+                        SoftChip(
+                            text = chip1,
+                            bg = Color(0xFFFFF3C4),
+                            fg = Color(0xFF9F7A00)
+                        )
                         Spacer(Modifier.width(8.dp))
                     }
 
-                    if (chip2 != null) {
-                        SoftChip(text = chip2, bg = Color(0xFFFFF3C4), fg = Color(0xFF9F7A00))
+                    // chip2는 있을 때만 표시
+                    if (!chip2.isNullOrBlank() && chip2 != "#분류없음") {
+                        Spacer(Modifier.width(8.dp))
+                        SoftChip(
+                            text = chip2,
+                            bg = Color(0xFFFFF3C4),
+                            fg = Color(0xFF9F7A00)
+                        )
                     }
                 }
             }
