@@ -41,15 +41,14 @@ data class SettingsItem(val title: String, val onClick: () -> Unit)
 @Composable
 fun MyPageScreen(navController : NavHostController) {
     val menuItems = listOf(
-        SettingsItem(title = "알림 설정", onClick = { println("알림 설정 클릭") }),
-        SettingsItem(title = "내가 쓴 신고글", onClick = { println("신고글 클릭") }),
-        SettingsItem(title = "로그아웃", onClick = { println("로그아웃 클릭") }),
+        SettingsItem(title = "내가 쓴 신고글", onClick = { navController.navigate("my_register_screen") }),
+        SettingsItem(title = "로그아웃", onClick = { navController.navigate("login_screen") }),
     )
 
     Scaffold(
         containerColor = White,
         topBar = {
-            CustomTopBar("마이페이지", navController)
+            CustomTopBar("마이페이지", navController, "main_screen")
         }
     ) { innerPadding ->
         Column(
