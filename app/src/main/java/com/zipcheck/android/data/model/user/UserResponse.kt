@@ -10,9 +10,10 @@ data class UserResponse(
 )
 
 data class UserResult(
-    @SerializedName("name") val name: Int,
-    @SerializedName("profileUrl") val profileUrl: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("profileUrl") val profileUrl: String?,
     @SerializedName("oauthType") val oauthType: String,
-    @SerializedName("email") val email: String
+    @SerializedName("email") val email: String,
+    @SerializedName("role") val role: String
 )
 
