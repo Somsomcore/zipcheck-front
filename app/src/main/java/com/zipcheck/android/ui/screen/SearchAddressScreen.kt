@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,14 +32,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.zipcheck.android.R
+import com.zipcheck.android.data.api.MapService
+import com.zipcheck.android.data.repo.AddressRepository
+import com.zipcheck.android.ui.network.KakaoRetrofit
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.Gray
@@ -45,34 +54,28 @@ import com.zipcheck.android.ui.theme.LightBlack
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.OldAddressLabelColor
 import com.zipcheck.android.ui.theme.RoadAddressLabelColor
+import com.zipcheck.android.ui.viewmodel.AddressUiState
+import com.zipcheck.android.ui.viewmodel.SearchAddressViewModel
 
 @Composable
 fun SearchAddressScreen(navController: NavController) {
-    // Correctly declare state variables at the top of the Composable
-    var searchText by remember { mutableStateOf("") }
-    val allAddresses = remember {
-        listOf(
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16"),
-            AddressResult("11913", "경기도 구리시 인창2로 65", "경기도 구리시 인창동 640-16")
-        )
+    val context = LocalContext.current
+    val service = remember {
+        val restKey = context.getString(R.string.REST_API_KEY).trim()
+        KakaoRetrofit.getRetrofit(context, restApiKey = restKey)
+            .create(MapService::class.java)
     }
-
-    val filteredResults = if (searchText.isNotBlank()) {
-        allAddresses.filter { address ->
-            address.roadAddress.contains(searchText, ignoreCase = true) ||
-                    address.oldAddress.contains(searchText, ignoreCase = true)
+    val repo = remember { AddressRepository(service) }
+    val vm: SearchAddressViewModel = viewModel(
+        factory = object: ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return SearchAddressViewModel(repo) as T
+            }
         }
-    } else {
-        emptyList()
-    }
+    )
+
+    var searchText by remember { mutableStateOf("") }
+    val uiState by vm.ui.collectAsState()
 
     Column(
         modifier = Modifier
@@ -110,20 +113,39 @@ fun SearchAddressScreen(navController: NavController) {
         // Search TextField
         SearchTextField(
             searchText = searchText,
-            onValueChange = { newText -> searchText = newText }
+            onValueChange = { newText ->
+                vm.onQueryChange(newText)
+                searchText = newText
+            }
         )
 
         // Add a Spacer for some vertical separation
         Spacer(modifier = Modifier.height(16.dp))
 
         // Conditional rendering logic
-        if (searchText.isEmpty()) {
-            AddressInputExample()
-        } else {
-            AddressResultsList(
-                results = filteredResults,
-                navController = navController
-            )
+        when (val s = uiState) {
+            AddressUiState.Idle -> {
+                // 검색어가 없을 때: 입력 예시 그대로 노출
+                AddressInputExample()
+            }
+            AddressUiState.Loading -> {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is AddressUiState.Error -> {
+                Text(
+                    text = "검색 실패: ${s.message}",
+                    color = Color.Red
+                )
+            }
+            is AddressUiState.Success -> {
+                if (s.items.isEmpty()) {
+                    Text("검색 결과가 없습니다.", color = ExampleTextGray)
+                } else {
+                    AddressResultsList(results = s.items, navController = navController)
+                }
+            }
         }
     }
 }
