@@ -35,15 +35,14 @@ fun ReportCard(
     ) {
         Box(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TypeBadge(badge)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall.copy(color = Color(0xFF2B2F43))
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
+                TypeBadge(badge)
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall.copy(color = Color(0xFF2B2F43))
+                )
+
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = sub,
                     style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF9AA3B2))
@@ -59,17 +58,9 @@ fun ReportCard(
                         style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF2A62F4))
                     )
                 }
-                Spacer(Modifier.height(30.dp))
+                Spacer(Modifier.height(20.dp))
 
                 Row {
-//                    if (chip1 != null) {
-//                        SoftChip(text = chip1, bg = Color(0xFFFFF3C4), fg = Color(0xFF9F7A00))
-//                        Spacer(Modifier.width(8.dp))
-//                    }
-//
-//                    if (chip2 != null) {
-//                        SoftChip(text = chip2, bg = Color(0xFFFFF3C4), fg = Color(0xFF9F7A00))
-//                    }
                     if (!chip1.isNullOrBlank() && chip1 != "#분류없음") {
                         SoftChip(
                             text = chip1,

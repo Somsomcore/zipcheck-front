@@ -54,15 +54,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.MyReportItem
 import com.zipcheck.android.data.model.mypage.MyReportTab
+import com.zipcheck.android.data.model.mypage.RegistrationStatus
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
+import com.zipcheck.android.data.network.RetrofitObj
+import com.zipcheck.android.data.repo.ReportRepository
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
@@ -73,11 +78,14 @@ import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.HomeBG
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
+import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
+import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -295,21 +303,30 @@ class MainActivity : ComponentActivity() {
                                 showBottomBar.value = false
                             }
 
-                            // 더미 데이터 (원하면 비워도 됨)
-                            val receivedItems = emptyList<MyReportItem>()
-                            val registeredItems = listOf(null
-//                                MyReportItem(
-//                                    id = 1,
-//                                    typeName = "오피스텔",
-//                                    address = "경기도 구리시 검암로 27번길 34"
-//                                    reporter = "이태호",
-//                                    status = "대기중",
-//                                    date = "2025.12.12",
-//                                    chip1 = "#깡통전세"
-//                                )
-                                // ... 추가 가능
+                            // 1) 네트워킹 준비
+                            val context = LocalContext.current
+                            val reportService = remember {
+                                RetrofitObj.getRetrofit(context).create(ReportService::class.java)
+                            }
+                            val repo = remember { ReportRepository(reportService) }
+
+                            // 2) ViewModel 생성 (Factory 사용)
+                            val myRegisterVm: MyRegisterViewModel = viewModel(
+                                key = "myRegisterVm", // 선택: 프로세스 재생성 시 구분용
+                                factory = MyRegisterViewModelFactory(
+                                    repo = repo,
+                                    dummyToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0Mjk0OCwiZXhwIjoxNzYxODQ2NTQ4fQ.uu_IJCZNDBmc9r1nGWQJoNwZPxZQZvU3unyl-C0CuDHMbCVnCbSKFKKsLzURY__wk_NzFrpnQnQ0RTihEgT6XQ",
+                                    status = RegistrationStatus.PENDING,       // 초기 탭(접수) 기준
+                                    page = 0,
+                                    size = 20
+                                )
                             )
-                            MyRegisterScreen(navController = navController, receivedItems, registeredItems, defaultTab = MyReportTab.RECEIVED)
+
+                            // 3) 화면 호출
+                            MyRegisterScreen(
+                                navController = navController,
+                                viewModel = myRegisterVm
+                            )
                         }
                     }
                 }
@@ -474,9 +491,9 @@ fun MainScreen(
 
         Spacer(Modifier.height(50.dp))
 
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val context = LocalContext.current
         val reportService = remember {
-            com.zipcheck.android.data.network.RetrofitObj
+            RetrofitObj
                 .getRetrofit(context)
                 .create(ReportService::class.java)
         }
