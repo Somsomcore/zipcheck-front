@@ -9,9 +9,14 @@ class AddressRepository(private val service: MapService) {
         val res = service.searchAddress(query = query, page = 1, size = 15)
         return res.documents.map { doc ->
             AddressResult(
-                zipCode = doc.road_address?.zone_no ?: "",
-                roadAddress = doc.road_address?.address_name ?: (doc.address_name ?: ""),
-                oldAddress = doc.address_name ?: ""
+//                zipCode = doc.road_address?.zone_no ?: "",
+                zipCode = doc.address?.zipCode ?: "",
+//                roadAddress = doc.road_address?.address_name ?: (doc.address_name ?: ""),
+                roadAddress = doc.roadAddress?.addressName ?: (doc.addressName ?: ""),
+//                oldAddress = doc.address_name ?: "",
+//                bCode = doc.road_address?.bCode ?: ""
+                oldAddress = doc.addressName ?: "",
+                bCode = doc.address?.bCode ?: ""
             )
         }
     }

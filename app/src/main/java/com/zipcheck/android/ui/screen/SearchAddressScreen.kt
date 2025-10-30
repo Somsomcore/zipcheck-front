@@ -244,7 +244,8 @@ fun SearchTextField(
 data class AddressResult(
     val zipCode: String,
     val roadAddress: String,
-    val oldAddress: String
+    val oldAddress: String,
+    val bCode: String?,
 )
 
 @Composable
@@ -269,18 +270,14 @@ fun AddressResultItem(
             .fillMaxWidth()
             .padding(top = 12.dp)
             .clickable {
-//                // 클릭 시 내비게이션 로직 실행
-//                // 1. 도로명 주소를 URL 인코딩하여 특수문자 문제 해결
-//                val encodedAddress = URLEncoder.encode(address.roadAddress, StandardCharsets.UTF_8.toString())
-//
-//                // 2. 다음 화면으로 이동하며 인코딩된 주소를 인수로 전달
-//                navController.navigate("input_address_detail_screen/$encodedAddress")
-                // 1. 이전 화면으로 전달할 결과를 savedStateHandle에 저장
                 navController.previousBackStackEntry
                     ?.savedStateHandle
                     ?.set("selectedAddress", address.roadAddress)
 
-                // 2. 이전 화면으로 돌아가기 (popBackStack)
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("selectedRegionCode", address.bCode)
+
                 navController.popBackStack()
             }
     ) {

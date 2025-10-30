@@ -2,6 +2,7 @@ package com.zipcheck.android.data.api
 
 import com.zipcheck.android.data.model.map.KakaoAddressResponse
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Query
 
 interface MapService {

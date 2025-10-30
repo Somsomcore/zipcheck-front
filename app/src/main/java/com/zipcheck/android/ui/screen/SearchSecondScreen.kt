@@ -1,5 +1,7 @@
 package com.zipcheck.android.ui.screen
 
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -42,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Gray
@@ -52,9 +56,32 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchSecondScreen(navController: NavHostController) {
-    var floor by remember { mutableStateOf("") }
+fun SearchSecondScreen(
+    navController: NavHostController
+) {
+    val formJson = navController.currentBackStackEntry?.arguments?.getString("form")
 
+    if (formJson.isNullOrBlank()) {
+        Log.e("SearchSecondScreen", "❌ form 파라미터가 비어 있음")
+    } else {
+        val decoded = Uri.decode(formJson)
+        Log.d("SearchSecondScreen", "📦 디코딩된 JSON: $decoded")
+
+        val data = Gson().fromJson(decoded, Map::class.java)
+        Log.d("SearchSecondScreen", "✅ 파싱된 데이터: $data")
+
+        val regionCode = data["regionCode"]
+        Log.d("SearchSecondScreen", "📍 받은 regionCode = $regionCode")
+    }
+
+    val encoded = navController.currentBackStackEntry?.arguments?.getString("form").orEmpty()
+    val json = Uri.decode(encoded)
+    val mapType = object : TypeToken<MutableMap<String, String>>() {}.type
+    val form: MutableMap<String, String> = runCatching {
+        Gson().fromJson<MutableMap<String, String>>(json, mapType) ?: mutableMapOf()
+    }.getOrElse { mutableMapOf() }
+
+    var floor by remember { mutableStateOf("") }
     var houseYear by remember { mutableStateOf("") }
 
     val focusManager = LocalFocusManager.current
@@ -200,14 +227,18 @@ fun SearchSecondScreen(navController: NavHostController) {
 
             // 다음 버튼
             Button(
-                onClick = {  navController.navigate("search_result") {
-                    popUpTo("main_screen") {
-                        inclusive = false
-                        saveState = true
+                onClick = {
+                    form["floor"] = floor
+                    form["builtYear"] = houseYear
+
+                    // 4) 다음 화면으로 전달
+                    val nextEncoded = Uri.encode(Gson().toJson(form))
+                    navController.navigate("search_result?form=$nextEncoded") {
+                        // 필요 시 backstack 정책
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
-                } },
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)

@@ -99,13 +99,14 @@ fun RiskAnalysisResultScreen(navController: NavHostController) {
                     circleSize = 200.dp,
                     strokeWidth = 25.dp,
                     fontSize = 48,
-                    riskColor = CircleRed
+                    riskColor = CircleRed,
+                    riskScore = 88.0
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // 최우선 변제 금액 섹션
-                PriorityRepaymentSection()
+//                PriorityRepaymentSection()
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -131,7 +132,7 @@ fun RiskAnalysisResultScreen(navController: NavHostController) {
                 )
 
                 // 동면적/동거래 매물 대비 섹션
-                ComparisonSection()
+//                ComparisonSection()
 
                 Spacer(modifier = Modifier.height(24.dp))
 

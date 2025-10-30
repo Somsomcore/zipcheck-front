@@ -1,5 +1,7 @@
 package com.zipcheck.android.ui.screen
 
+import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,6 +59,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
 import com.zipcheck.android.R
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
@@ -77,20 +80,36 @@ fun SearchScreen(navController: NavHostController) {
     var deposit by remember { mutableStateOf("") }
     var houseType by remember { mutableStateOf("") }
     var area by remember { mutableStateOf("") }
+    var regionCode by remember { mutableStateOf("") }
 
     val focusManager = LocalFocusManager.current
 
     // 모든 필드가 채워졌는지 확인하는 변수
-    val allFieldsFilled = address.isNotEmpty() && detailAddress.isNotEmpty() && deposit.isNotEmpty() && houseType.isNotEmpty() && area.isNotEmpty()
+    val allFieldsFilled = address.isNotEmpty() && detailAddress.isNotEmpty() && deposit.isNotEmpty() && houseType.isNotEmpty() && area.isNotEmpty() && regionCode.isNotEmpty()
 
-    // ⭐ 추가/수정: SearchAddressScreen에서 돌아올 때 주소를 받아오는 로직
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
-        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("selectedAddress")?.observe(
-            lifecycleOwner
-        ) { result ->
-            address = result
-        }
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<String>("selectedAddress")
+            ?.observe(lifecycleOwner) { result ->
+                address = result
+            }
+
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<String>("selectedRegionCode")
+            ?.observe(lifecycleOwner) { code ->
+                regionCode = code
+
+                // ✅ 로그 추가
+                Log.d("SearchScreen", "📍 선택된 regionCode = $regionCode")
+                if (regionCode.isNullOrBlank()) {
+                    Log.e("SearchScreen", "❌ regionCode가 비어 있습니다! 주소 선택 확인 필요.")
+                } else {
+                    Log.d("SearchScreen", "✅ regionCode 정상 수신됨: $regionCode")
+                }
+            }
     }
 
     // ModalBottomSheet를 위한 상태 변수들
@@ -294,7 +313,24 @@ fun SearchScreen(navController: NavHostController) {
 
             // 다음 버튼
             Button(
-                onClick = { if (allFieldsFilled) navController.navigate("search_second") },
+                onClick = {
+                    if (allFieldsFilled) {
+                        val payload = mapOf(
+                            "address" to address,
+                            "addressDetail" to detailAddress,
+                            "deposit" to deposit,
+                            "propertyType" to houseType,
+                            "area" to area,
+                            "regionCode" to regionCode
+                        )
+                        val json = Gson().toJson(payload)
+                        val encoded = Uri.encode(json) // URL 안전하게 인코딩
+
+                        Log.d("SearchScreen", "🚀 다음 화면으로 이동! payload = $json")
+                        Log.d("SearchScreen", "🚀 encoded form = $encoded")
+
+                        navController.navigate("search_second?form=$encoded")
+                    } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)

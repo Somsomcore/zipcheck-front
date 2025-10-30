@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -172,12 +173,12 @@ class MainActivity : ComponentActivity() {
                             }
                             MainScreen(navController = navController)
                         }
-                        composable("risk_analysis_record") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
-                            RiskAnalysisRecordScreen(navController = navController)
-                        }
+//                        composable("risk_analysis_record") {
+//                            LaunchedEffect(Unit) {
+//                                showBottomBar.value = false
+//                            }
+//                            RiskAnalysisRecordScreen(navController = navController)
+//                        }
                         composable("risk_analysis_result") {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
@@ -208,13 +209,32 @@ class MainActivity : ComponentActivity() {
                                 InputAddressDetailScreen(navController = navController, roadAddress = roadAddress)
                             }
                         }
-                        composable("search_second") {
+                        composable(
+                            route = "search_second?form={form}",
+                            arguments = listOf(
+                                navArgument("form") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = ""
+                                }
+                            )
+                        ) {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
                             SearchSecondScreen(navController = navController)
                         }
-                        composable("search_result") {
+
+                        composable(
+                            route = "search_result?form={form}",
+                            arguments = listOf(
+                                navArgument("form") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = ""
+                                }
+                            )
+                        ) {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
@@ -610,35 +630,35 @@ fun MainScreen(
 
         }
 
-        val sampleResults = listOf(
-            RiskAnalysisResult(
-                id = 1,
-                address = "경기도 구리시 인창2로 65 (인창동)",
-                apartment = "힐스테이트 구리역 105동 1604호",
-                riskPercentage = 88,
-                riskLevel = "아주 위험",
-                note = "유사 매물 대비 보증금이 10% 높습니다",
-                date = LocalDate.of(2025, 9, 14)
-            ),
-            RiskAnalysisResult(
-                id = 2,
-                address = "경기도 구리시 인창2로 65 (인창동)",
-                apartment = "힐스테이트 구리역 105동 1604호",
-                riskPercentage = 60,
-                riskLevel = "의심",
-                note = "유사 매물 대비 보증금이 10% 높습니다",
-                date = LocalDate.of(2025, 9, 14)
-            )
+//        val sampleResults = listOf(
+//            RiskAnalysisResult(
+//                id = 1,
+//                address = "경기도 구리시 인창2로 65 (인창동)",
+//                apartment = "힐스테이트 구리역 105동 1604호",
+//                riskPercentage = 88,
+//                riskLevel = "아주 위험",
+//                note = "유사 매물 대비 보증금이 10% 높습니다",
+//                date = LocalDate.of(2025, 9, 14)
+//            ),
+//            RiskAnalysisResult(
+//                id = 2,
+//                address = "경기도 구리시 인창2로 65 (인창동)",
+//                apartment = "힐스테이트 구리역 105동 1604호",
+//                riskPercentage = 60,
+//                riskLevel = "의심",
+//                note = "유사 매물 대비 보증금이 10% 높습니다",
+//                date = LocalDate.of(2025, 9, 14)
+//            )
             // 여기에 추가 결과들을 넣을 수 있습니다.
-        )
+//        )
 
         // case 1: 결과 2개 + 추가 카드 1개
-        RiskAnalysisList(
-            results = sampleResults,
-            onAddClicked = { navController.navigate("search_") },
-            onItemClicked = { result -> println("Clicked: ${result.address}") },
-            navController = navController
-        )
+//        RiskAnalysisList(
+//            results = sampleResults,
+//            onAddClicked = { navController.navigate("search_") },
+//            onItemClicked = { result -> println("Clicked: ${result.address}") },
+//            navController = navController
+//        )
     }
 }
 
