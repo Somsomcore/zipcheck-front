@@ -1,6 +1,7 @@
 package com.zipcheck.android.ui.screen
 
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,24 +52,30 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.navigation
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.MyReportItem
 import com.zipcheck.android.data.model.mypage.MyReportTab
+import com.zipcheck.android.data.model.mypage.RegistrationStatus
+import com.zipcheck.android.data.model.report.toRiskAnalysisResult
 import com.zipcheck.android.data.model.report.ReportViewModel
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
+import com.zipcheck.android.data.network.RetrofitObj
+import com.zipcheck.android.data.repo.ReportRepository
+import com.zipcheck.android.data.repo.RiskRepository
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
@@ -79,12 +86,21 @@ import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.HomeBG
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
+import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
+import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
+import com.zipcheck.android.ui.viewmodel.MyRiskListVMFactory
+import com.zipcheck.android.ui.viewmodel.MyRiskListViewModel
+import com.zipcheck.android.ui.viewmodel.RiskViewModel
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDate
+import java.util.Date
+import kotlin.collections.map
 
 class MainActivity : ComponentActivity() {
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,7 +134,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "login_screen", //main_screen
+                        startDestination = "main_screen", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -171,17 +187,42 @@ class MainActivity : ComponentActivity() {
                             }
                             MainScreen(navController = navController)
                         }
+
                         composable("risk_analysis_record") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
-                            RiskAnalysisRecordScreen(navController = navController)
+                            LaunchedEffect(Unit) { showBottomBar.value = false }
+
+                            val context = LocalContext.current
+                            val reportService = remember { RetrofitObj.getRetrofit(context).create(ReportService::class.java) }
+                            val repo = remember { RiskRepository(reportService) }
+                            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4NTUxNSwiZXhwIjoxNzYxODg5MTE1fQ.qgdYpBmg_wvhyuUz84E7Gh6jxT3xS6QIo2mS9NJ5ZQyVdEOEFhiomQgYqIIkSmYKEEIpiMmnV9wgCZOW1cTLeQ"
+                            val vm: MyRiskListViewModel = viewModel(
+                                key = "riskRecordVM",
+                                factory = MyRiskListVMFactory(repo = repo, accessToken = accessToken, year = LocalDate.now().year, month = LocalDate.now().monthValue)
+                            )
+
+                            RiskAnalysisRecordScreen(
+                                navController = navController,
+                                vm = vm
+                            )
                         }
-                        composable("risk_analysis_result") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
-                            RiskAnalysisResultScreen(navController = navController)
+
+                        composable(
+                            route = "risk_analysis_result?resultJson={resultJson}",
+                            arguments = listOf(
+                                navArgument("resultJson") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val encoded = backStackEntry.arguments?.getString("resultJson") ?: ""
+                            val jsonString = Uri.decode(encoded)
+
+                            val gson = Gson()
+                            val result = gson.fromJson(jsonString, RiskAnalysisResult::class.java)
+
+                            LaunchedEffect(Unit) { showBottomBar.value = false }
+                            RiskAnalysisResultScreen(navController = navController, result = result)
                         }
 
                         // Other screen routes
@@ -207,13 +248,32 @@ class MainActivity : ComponentActivity() {
                                 InputAddressDetailScreen(navController = navController, roadAddress = roadAddress)
                             }
                         }
-                        composable("search_second") {
+                        composable(
+                            route = "search_second?form={form}",
+                            arguments = listOf(
+                                navArgument("form") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = ""
+                                }
+                            )
+                        ) {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
                             SearchSecondScreen(navController = navController)
                         }
-                        composable("search_result") {
+
+                        composable(
+                            route = "search_result?form={form}",
+                            arguments = listOf(
+                                navArgument("form") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = ""
+                                }
+                            )
+                        ) {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
@@ -303,11 +363,30 @@ class MainActivity : ComponentActivity() {
                                 showBottomBar.value = false
                             }
 
-                            // 더미 데이터 (원하면 비워도 됨)
-                            val receivedItems = emptyList<MyReportItem>()
-                            val registeredItems = listOf(null
+                            // 1) 네트워킹 준비
+                            val context = LocalContext.current
+                            val reportService = remember {
+                                RetrofitObj.getRetrofit(context).create(ReportService::class.java)
+                            }
+                            val repo = remember { ReportRepository(reportService) }
+
+                            // 2) ViewModel 생성 (Factory 사용)
+                            val myRegisterVm: MyRegisterViewModel = viewModel(
+                                key = "myRegisterVm", // 선택: 프로세스 재생성 시 구분용
+                                factory = MyRegisterViewModelFactory(
+                                    repo = repo,
+                                    dummyToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0Mjk0OCwiZXhwIjoxNzYxODQ2NTQ4fQ.uu_IJCZNDBmc9r1nGWQJoNwZPxZQZvU3unyl-C0CuDHMbCVnCbSKFKKsLzURY__wk_NzFrpnQnQ0RTihEgT6XQ",
+                                    status = RegistrationStatus.PENDING,       // 초기 탭(접수) 기준
+                                    page = 0,
+                                    size = 20
+                                )
                             )
-                            MyRegisterScreen(navController = navController, receivedItems, registeredItems, defaultTab = MyReportTab.RECEIVED)
+
+                            // 3) 화면 호출
+                            MyRegisterScreen(
+                                navController = navController,
+                                viewModel = myRegisterVm
+                            )
                         }
                     }
                 }
@@ -437,8 +516,7 @@ fun MainScreen(
                 query = query,
                 onQueryChange = { query = it },
                 onSearch = {
-                    // TODO: 여기서 카카오 장소검색/지오코딩 호출 후
-                    // 결과 좌표로 map.moveCamera(...) 하면 끝!
+                    navController.navigate("map") // 쿼리로 검색 쿼리 추가하기
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -472,16 +550,17 @@ fun MainScreen(
 
         Spacer(Modifier.height(50.dp))
 
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val context = LocalContext.current
         val reportService = remember {
-            com.zipcheck.android.data.network.RetrofitObj
+            RetrofitObj
                 .getRetrofit(context)
                 .create(ReportService::class.java)
         }
-        val accessToken = remember { "YOUR_JWT_ACCESS_TOKEN" }
+        val accessToken = remember { "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4NTUxNSwiZXhwIjoxNzYxODg5MTE1fQ.qgdYpBmg_wvhyuUz84E7Gh6jxT3xS6QIo2mS9NJ5ZQyVdEOEFhiomQgYqIIkSmYKEEIpiMmnV9wgCZOW1cTLeQ" }
 
         HomeTop5Block(
-            reportService = reportService
+            reportService = reportService,
+            accessToken = accessToken
         )
 
         Spacer(Modifier.height(32.dp))
@@ -496,7 +575,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .clickable(onClick = { navController.navigate("register_graph") }),
+                    .clickable(onClick = { navController.navigate("register") }),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             ) {
@@ -545,7 +624,6 @@ fun MainScreen(
                                 contentDescription = "Go",
                                 tint = ExampleTextGray,
                                 modifier = Modifier.size(10.dp)
-                                    .clickable { navController.navigate("register_graph") }
                             )
                         }
                     }
@@ -585,51 +663,60 @@ fun MainScreen(
                     contentDescription = "next",
                     modifier = Modifier
                         .size(16.dp)
-                        .clickable { navController.navigate("risk_analysis_record") } // 클릭 시 이전 화면으로 돌아감
+                        .clickable { navController.navigate("risk_analysis_record") }
                 )
             }
 
         }
 
-        val sampleResults = listOf(
-            RiskAnalysisResult(
-                id = 1,
-                address = "경기도 구리시 인창2로 65 (인창동)",
-                apartment = "힐스테이트 구리역 105동 1604호",
-                riskPercentage = 88,
-                riskLevel = "아주 위험",
-                note = "유사 매물 대비 보증금이 10% 높습니다",
-                date = LocalDate.of(2025, 9, 14)
-            ),
-            RiskAnalysisResult(
-                id = 2,
-                address = "경기도 구리시 인창2로 65 (인창동)",
-                apartment = "힐스테이트 구리역 105동 1604호",
-                riskPercentage = 60,
-                riskLevel = "의심",
-                note = "유사 매물 대비 보증금이 10% 높습니다",
-                date = LocalDate.of(2025, 9, 14)
-            )
-            // 여기에 추가 결과들을 넣을 수 있습니다.
-        )
+        val repo = remember { RiskRepository(reportService) }
 
-        // case 1: 결과 2개 + 추가 카드 1개
+        val now = LocalDate.now()
+
+        val vm: MyRiskListViewModel = viewModel(
+            key = "myRiskListVM",
+            factory = MyRiskListVMFactory(repo = repo,
+                accessToken = accessToken,
+                year = now.year,
+                month = now.monthValue)
+            )
+
+        val gson = Gson()
+
+        LaunchedEffect(Unit) {
+            vm.load(page = 0, size = 10, year = now.year, month = now.monthValue)   // 현재 연/월 기준 호출
+        }
+
+        val items by vm.items.collectAsState()
+        val loading by vm.loading.collectAsState()
+        val error by vm.error.collectAsState()
+
+        // “최근 실행한 위험도 분석” 리스트 바인딩 (샘플 리스트 대신 서버 값 사용)
         RiskAnalysisList(
-            results = sampleResults,
-            onAddClicked = { navController.navigate("search_") },
-            onItemClicked = { result -> println("Clicked: ${result.address}") },
+            results = items.map { it.toRiskAnalysisResult() },   // 변환 확장함수 아래 추가
+            onAddClicked = { navController.navigate("search") },
+            onItemClicked = { result ->
+                val json = gson.toJson(result)
+                val encoded = Uri.encode(json)
+                navController.navigate("risk_analysis_result?resultJson=$encoded")
+            } ,
             navController = navController
         )
+
+        // 로딩/에러 UI는 취향대로
+        if (loading) { /* 로딩 인디케이터 */ }
+        error?.let { /* 에러 토스트/텍스트 */ }
     }
 }
 
 @Composable
 fun HomeTop5Block(
-    reportService: ReportService
+    reportService: ReportService,
+    accessToken: String // 서버 토큰
 ) {
     TopReportsSection(
         reportService = reportService,
-        accessToken = "",          // 또는 null 전달
-        addBearerIfMissing = false // 자동 추가 안함
+        accessToken = accessToken,          // "Bearer " 안붙였어도 자동으로 붙여줌
+        addBearerIfMissing = true
     )
 }

@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.zipcheck.android.data.model.report.MyRiskItem
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.screen.RiskLevelSection
 import com.zipcheck.android.ui.theme.BorderGray
@@ -23,12 +24,12 @@ import com.zipcheck.android.ui.theme.CircleRed
 
 @Composable
 fun RiskResultCard(
-    result: RiskAnalysisResult,
+    result: MyRiskItem,
     onClick: () -> Unit
 ) {
     val riskColor = when (result.riskLevel) {
-        "아주 위험" -> CircleRed // 빨간색 (88%)
-        "의심" -> CircleOrange // 주황색 (60%)
+        "Critical" -> CircleRed // 빨간색 (88%)
+        "Danger" -> CircleOrange // 주황색 (60%)
         else -> CircleGreen // 기본/안전 (녹색)
     }
 
@@ -46,7 +47,7 @@ fun RiskResultCard(
             Spacer(modifier = Modifier.height(4.dp))
             // 주소
             Text(result.address, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-            Text(result.apartment, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(result.addressDetail, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
 
             Spacer(modifier = Modifier.height(48.dp))
 
@@ -55,7 +56,8 @@ fun RiskResultCard(
                 circleSize = 100.dp,
                 strokeWidth = 14.dp,
                 fontSize = 24,
-                riskColor = riskColor
+                riskColor = riskColor,
+                riskScore = result.riskScore
             )
         }
     }

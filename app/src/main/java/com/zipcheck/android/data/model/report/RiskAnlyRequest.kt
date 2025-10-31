@@ -1,9 +1,16 @@
-package com.zipcheck.android.data.model.riskAnalysis
+package com.zipcheck.android.data.model.report
 
-import com.zipcheck.android.data.model.report.MyRiskItem
-import java.time.LocalDate
+data class RiskAnlyRequest(
+    val deposit: Int, // 보증금
+    val propertyType: String, // 매물 종류
+    val area: Int, // 면적
+    val floor: Int, // 층
+    val buildYear: Int,
+    val address: String,
+    val addressDetail: String
+)
 
-data class RiskAnalysisResult(
+data class MyRiskItem(
     val riskId: Int,
     val userId: Int,
     val riskScore: Double,
@@ -18,9 +25,4 @@ data class RiskAnalysisResult(
     val createdAt: String,
     val address: String,
     val addressDetail: String
-)
-// 날짜별로 그룹화된 데이터 구조
-data class AnalysisGroup(
-    val date: LocalDate,
-    val results: List<MyRiskItem>
 )

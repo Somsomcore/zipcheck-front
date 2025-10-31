@@ -63,6 +63,7 @@ dependencies {
     // kakao map
     implementation("com.kakao.maps.open:android:2.12.18")
 //    implementation("com.kakao.vectormap:map:2.9.5")
+//    implementation("com.kakao.sdk:kakaovectormap-core:2.9.5")
 
     // kakao login
     implementation("com.kakao.sdk:v2-user:2.22.0")

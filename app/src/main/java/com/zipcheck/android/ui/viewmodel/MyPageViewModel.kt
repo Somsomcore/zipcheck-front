@@ -29,7 +29,7 @@ class MyPageViewModel(
             _uiState.value = UserInfoUIState.Loading // 로딩 상태 설정
 
             // NOTE: 실제 앱에서는 SharedPreferences나 다른 저장소에서 Access Token을 가져와야 합니다.
-            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTc2MDQzNiwiZXhwIjoxNzYxNzY0MDM2fQ.8bl4YlXJA4vmh0kfJZx97LoXpIMrusa-ueQ7FDZFZ0KuHIyfJSbnPpDUi_G4WVvKPRW_iWZjI4lVx10RzHxM3Q"
+            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0MTEzNSwiZXhwIjoxNzYxODQ0NzM1fQ.lwc2Hup0GLBQ57MGxJKBJJKvBO6izS7uhIkhxfBIXivrN6MrkPlargNZxnMK_I_JEiEAKKSI6fPexYgQY3c6Aw"
 
             try {
                 // Repository를 통해 API 호출 (suspend 함수 가정)
