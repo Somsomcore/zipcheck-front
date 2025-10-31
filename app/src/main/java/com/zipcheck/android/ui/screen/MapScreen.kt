@@ -1,6 +1,7 @@
 package com.zipcheck.android.ui.screen
 
 import android.Manifest
+import android.R.attr.label
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
@@ -47,11 +48,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import com.kakao.vectormap.label.Label
 import com.kakao.vectormap.label.LabelLayer
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
-import com.kakao.vectormap.label.LabelTextStyle
+import com.kakao.vectormap.label.LabelTextBuilder
 import com.zipcheck.android.data.api.MapService
 import com.zipcheck.android.data.model.map.AddrListItem
 import com.zipcheck.android.data.network.RetrofitObj
@@ -101,8 +101,6 @@ fun MapScreen(navController: NavHostController) {
     val kakaoRestApiKey = remember { context.getString(R.string.REST_API_KEY).trim() }
 
     var kakaoMap by remember { mutableStateOf<KakaoMap?>(null) }
-    var pinLayer by remember { mutableStateOf<LabelLayer?>(null) }
-    val livePins = remember { mutableStateListOf<Label>() }
 
     val retrofit = remember {
         RetrofitObj.getRetrofit(context)  // <= 너의 기존 객체 사용
@@ -116,34 +114,11 @@ fun MapScreen(navController: NavHostController) {
     var query by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    fun clearPins() {
-        // 레이어 전체 제거 + 추적 리스트 비우기
-        pinLayer?.removeAll()
-        livePins.clear()
-    }
-
-    fun drawPins(items: List<AddrListItem>) {
-        val layer = pinLayer ?: return
-        clearPins()
-
-        // 스타일 (아이콘/텍스트)
-        val textStyle = LabelTextStyle.from(30, android.graphics.Color.BLACK)
-        val baseStyle = LabelStyle.from(textStyle)
-
-        items.forEach { item ->
-            val options = LabelOptions.from(LatLng.from(item.latitude, item.longitude))
-                .setStyles(baseStyle)
-
-            val label = layer.addLabel(options)
-            label?.tag = item.address
-
-            livePins.add(label)
-        }
-    }
-
     fun toast(msg: String) {
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
     }
+
+    var pinsLayer by remember { mutableStateOf<LabelLayer?>(null) }
 
     // 백엔드 호출 → 지도에 반영
     fun refreshPins(center: LatLng, radiusMeters: Int = 5000) {
@@ -154,14 +129,50 @@ fun MapScreen(navController: NavHostController) {
                     lng = center.longitude,
                     radiusMeters = radiusMeters
                 )
-                drawPins(data)
-                toast("주변 신고 ${data.size}건 위치 업데이트")
+
+                val layer = pinsLayer ?: kakaoMap?.labelManager?.layer
+                if (layer == null) {
+                    Log.e("MapScreen", "Label layer is null. Skip drawing pins.")
+                    toast("레이어 준비 중… 잠시 후 다시 시도")
+                    return@launch
+                }
+
+                layer.removeAll()
+
+                var added = 0
+                data.forEach { item ->
+                    // 필드명 모두 커버: lat/lng or latitude/longitude (문자/숫자 모두)
+                    val lat = when {
+                        item.latitude != null -> item.latitude
+                        else -> null
+                    }
+                    val lng = when {
+                        item.longitude != null -> item.longitude
+                        else -> null
+                    }
+
+                    if (lat == null || lng == null) {
+                        Log.w("MapScreen", "Skip item (no coords): $item")
+                        return@forEach
+                    }
+
+                    val pos = LatLng.from(lat, lng)
+                    val style = LabelStyle.from(R.drawable.marker)
+
+                    val label = LabelOptions.from(pos).setStyles(style)
+                    layer.addLabel(label)
+                    added++
+                }
+
+                Log.d("MapScreen", "Fetched=${data.size}, Added=$added")
+                toast("주변 신고 ${data.size}건")
             } catch (e: Exception) {
                 Log.e("MapScreen", "addrList error: ${e.message}", e)
                 toast("신고 위치 불러오기 실패")
             }
         }
     }
+
 
     // 1) 최초 진입 시(또는 해당 화면 재진입 시) 안전하게 권한 요청
     LaunchedEffect(perms.permissions) {
@@ -177,7 +188,6 @@ fun MapScreen(navController: NavHostController) {
         }
     ) { paddingValues -> // Scafflod의 padding 값을 받습니다.
 
-        // **모든 지도 및 UI 콘텐츠는 이 paddingValues를 Modifier에 적용해야 합니다.**
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -237,20 +247,6 @@ fun MapScreen(navController: NavHostController) {
                             override fun onMapReady(map: KakaoMap) {
                                 kakaoMap = map
 
-                                // 라벨 레이어 1회 생성 (존재하면 재사용)
-                                // ⚠️ setAllowOverlap, setZoomLevel, setTag, setText 오류 수정
-                                // setAllowOverlap은 LabelLayerOptions의 메소드입니다.
-                                pinLayer = map.labelManager?.layer
-
-                                // 라벨 클릭: 주소/신고수 토스트
-                                // ⚠️ setOnLabelClickListener와 label.texts?.firstOrNull() 오류 수정
-                                map.setOnLabelClickListener { _, _, label ->
-                                    val address = label.tag as? String ?: "주소 없음"
-//                                    val text = label.text ?: ""
-//                                    toast("[$text건] $address")
-                                    true // 클릭 이벤트를 소비했음을 알립니다.
-                                }
-
                                 // 위치 업데이트를 요청하고, 위치가 업데이트되면 맵을 이동시킵니다.
                                 locationManager.requestLocationUpdates(
                                     LocationManager.GPS_PROVIDER,
@@ -273,18 +269,6 @@ fun MapScreen(navController: NavHostController) {
                                     }
                                 )
 
-                                // 초기 위치 가져오기
-//                                locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-//                                    ?.let { lastLoc ->
-//                                        map.moveCamera(
-//                                            CameraUpdateFactory.newCenterPosition(
-//                                                LatLng.from(
-//                                                    lastLoc.latitude,
-//                                                    lastLoc.longitude
-//                                                )
-//                                            )
-//                                        )
-//                                    }
                                 locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { last ->
                                     val init = LatLng.from(last.latitude, last.longitude)
                                     map.moveCamera(CameraUpdateFactory.newCenterPosition(init))
@@ -316,4 +300,17 @@ fun MapScreen(navController: NavHostController) {
             }
         }
     }
+}
+
+fun addMarker(map: KakaoMap, position: LatLng) {
+    val labelLayer = map.labelManager?.layer ?: return
+
+    // 텍스트 라벨 스타일 (아이콘처럼도 가능)
+    val style = LabelStyle.from(R.drawable.marker)
+
+    val label = LabelOptions.from(position)
+        .setStyles(style)
+
+    // 실제 마커 생성
+    labelLayer.addLabel(label)
 }
