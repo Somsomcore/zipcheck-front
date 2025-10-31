@@ -510,8 +510,7 @@ fun MainScreen(
                 query = query,
                 onQueryChange = { query = it },
                 onSearch = {
-                    // TODO: 여기서 카카오 장소검색/지오코딩 호출 후
-                    // 결과 좌표로 map.moveCamera(...) 하면 끝!
+                    navController.navigate("map") // 쿼리로 검색 쿼리 추가하기
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
