@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -42,6 +43,8 @@ import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.os.Build
+import android.util.Base64
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -68,6 +71,7 @@ import com.zipcheck.android.data.model.mypage.MyReportItem
 import com.zipcheck.android.data.model.mypage.MyReportTab
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
 import com.zipcheck.android.data.model.report.toRiskAnalysisResult
+import com.zipcheck.android.data.model.report.ReportViewModel
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.ReportRepository
@@ -90,6 +94,7 @@ import com.zipcheck.android.ui.viewmodel.RiskViewModel
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.time.LocalDate
 import java.util.Date
 import kotlin.collections.map
@@ -100,17 +105,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        try {
-//            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
-//            for (signature in info.signatures!!) {
-//                val md: MessageDigest = MessageDigest.getInstance("SHA")
-//                md.update(signature.toByteArray())
-//                val keyHash = String(Base64.encode(md.digest(), Base64.NO_WRAP))
-//                Log.d("KeyHash", "키 해시: $keyHash")
-//            }
-//        } catch (e: Exception) {
-//            Log.e("KeyHash", "키 해시 얻기 실패", e)
-//        }
+        try {
+            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+            for (signature in info.signatures!!) {
+                val md: MessageDigest = MessageDigest.getInstance("SHA")
+                md.update(signature.toByteArray())
+                val keyHash = String(Base64.encode(md.digest(), Base64.NO_WRAP))
+                Log.d("KeyHash", "키 해시: $keyHash")
+            }
+        } catch (e: Exception) {
+            Log.e("KeyHash", "키 해시 얻기 실패", e)
+        }
 
         setContent {
             ZipcheckfrontTheme {
@@ -286,65 +291,66 @@ class MainActivity : ComponentActivity() {
                             }
                             FraudHistoryScreen()
                         }
-                        composable("register") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
-                            RegisterScreen(navController = navController)
-                        }
-                        composable(
-                            route = "register_screen_2/{address}/{detailAddress}",
-                            arguments = listOf(
-                                navArgument("address") { type = NavType.StringType },
-                                navArgument("detailAddress") { type = NavType.StringType }
-                            )
-                        ) { backStackEntry ->
-                            // RegisterScreen2는 BottomBar를 숨겨야 하므로 추가
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
+                        navigation(startDestination = "register_screen_1", route = "register_graph") {
+
+                            // 1) 등록 1단계: 주소 입력
+                            composable("register_screen_1") { backStackEntry ->
+                                LaunchedEffect(Unit) { showBottomBar.value = false }
+
+                                // 부모 그래프 엔트리로부터 같은 ViewModel 공유
+                                val parentEntry = remember(backStackEntry) {
+                                    navController.getBackStackEntry("register_graph")
+                                }
+                                val reportVm: ReportViewModel = viewModel(parentEntry)
+
+                                RegisterScreen(navController = navController, reportVm = reportVm)
                             }
 
-                            val address = backStackEntry.arguments?.getString("address") ?: ""
-                            val detailAddress = backStackEntry.arguments?.getString("detailAddress") ?: ""
+                            // 2) 등록 2단계: 분류/계약형태/날짜
+                            composable(
+                                route = "register_screen_2/{address}/{detailAddress}",
+                                arguments = listOf(
+                                    navArgument("address") { type = NavType.StringType },
+                                    navArgument("detailAddress") { type = NavType.StringType }
+                                )
+                            ) { backStackEntry ->
+                                LaunchedEffect(Unit) { showBottomBar.value = false }
 
-                            RegisterScreen2(
-                                navController = navController,
-                                address = address,
-                                detailAddress = detailAddress
-                            )
-                        }
+                                val parentEntry = remember(backStackEntry) {
+                                    navController.getBackStackEntry("register_graph")
+                                }
+                                val reportVm: ReportViewModel = viewModel(parentEntry)
 
+                                // 1단계에서 encode된 값을 여기서 decode
+                                val address = backStackEntry.arguments?.getString("address") ?: ""
+                                val detailAddress = backStackEntry.arguments?.getString("detailAddress") ?: ""
 
-                        composable(
-                            // 1. 라우트를 'register_screen_3'으로 하고, 하나의 인자(allDataJson)를 받도록 수정합니다.
-                            route = "register_screen_3/{allDataJson}",
-                            arguments = listOf(
-                                navArgument("allDataJson") { type = NavType.StringType }
-                            )
-                        ) { backStackEntry ->
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
+                                RegisterScreen2(
+                                    navController = navController,
+                                    reportVm = reportVm,
+                                    address = address,
+                                    detailAddress = detailAddress
+                                )
                             }
+                            composable("register_screen_3") { backStackEntry ->
+                                LaunchedEffect(Unit) { showBottomBar.value = false }
 
-                            // 2. 전달받은 인코딩된 JSON 문자열을 가져옵니다.
-                            val encodedJson = backStackEntry.arguments?.getString("allDataJson") ?: ""
+                                val parentEntry = remember(backStackEntry) {
+                                    navController.getBackStackEntry("register_graph")
+                                }
+                                val reportVm: ReportViewModel = viewModel(parentEntry)
 
-                            // 3. 디코딩하여 원래의 JSON 문자열로 복원합니다.
-                            val jsonString = URLDecoder.decode(encodedJson, StandardCharsets.UTF_8.name())
+                                RegisterScreen3(
+                                    navController = navController,
+                                    reportVm = reportVm
+                                )
+                            }
+                            composable("register_screen_4") { backStackEntry ->
+                                LaunchedEffect(Unit) { showBottomBar.value = false } // 완료화면도 바텀 숨김 유지(원하면 true)
 
-                            // 4. JSON 문자열을 다시 Map 객체로 변환합니다.
-                            val gson = Gson()
-                            val mapType = object : TypeToken<Map<String, String?>>() {}.type
-                            val previousDataMap: Map<String, String?> = gson.fromJson(jsonString, mapType)
-
-                            // 5. 복원된 Map 데이터를 RegisterScreen3에 전달합니다.
-                            RegisterScreen3(
-                                navController = navController,
-                                previousData = previousDataMap
-                            )
-                        }
-                        composable("register_screen4") {
-                            RegisterScreen4(navController = navController)
+                                // 완료 화면은 VM 필요 없음
+                                RegisterScreen4(navController = navController)
+                            }
                         }
                         composable("my_page") {
                             LaunchedEffect(Unit) {

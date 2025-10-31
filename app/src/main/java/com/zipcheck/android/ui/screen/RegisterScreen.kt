@@ -58,6 +58,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
+import com.zipcheck.android.data.model.report.ReportViewModel
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
@@ -73,7 +74,9 @@ import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(navController: NavHostController) {
+fun RegisterScreen(navController: NavHostController,
+                   reportVm: ReportViewModel
+) {
     // 텍스트 필드에 입력된 값을 저장하는 상태 변수
     var address by remember { mutableStateOf("") }
     var detailAddress by remember { mutableStateOf("") } // 상세 주소 추가
@@ -176,15 +179,14 @@ fun RegisterScreen(navController: NavHostController) {
                 // 다음 버튼
                 Button(
                     onClick = {
-                        if (allFieldsFilled) {
-                            // 1. URL 경로로 사용하기 위해 값을 인코딩합니다.
-                            val encodedAddress =
-                                URLEncoder.encode(address, StandardCharsets.UTF_8.name())
-                            val encodedDetailAddress =
-                                URLEncoder.encode(detailAddress, StandardCharsets.UTF_8.name())
+                        if (address.isNotEmpty() && detailAddress.isNotEmpty()) {
+                            // VM에 반영
+                            reportVm.setAddress(address)
+                            reportVm.setAddrDetail(detailAddress)
 
-                            // 2. 인코딩된 값을 포함하여 다음 화면으로 이동합니다.
-                            navController.navigate("register_screen_2/$encodedAddress/$encodedDetailAddress")
+                            val encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8.name())
+                            val encodedDetail = URLEncoder.encode(detailAddress, StandardCharsets.UTF_8.name())
+                            navController.navigate("register_screen_2/$encodedAddress/$encodedDetail")
                         }
                     },
                     modifier = Modifier

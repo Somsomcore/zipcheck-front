@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
@@ -160,22 +161,40 @@ fun RegisterScreen4(navController: NavHostController) {
                 // 확인 버튼
                 Button(
                     onClick = {
-                        // "확인" 버튼 클릭 시 홈 화면으로 이동 (예시)
-                        navController.navigate("main_screen")
+                        // 1) register_graph 목적지 id를 가져온다
+                        val registerGraphId = try {
+                            navController.getBackStackEntry("register_graph").destination.id
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        if (registerGraphId != null) {
+                            navController.navigate("main_screen") {
+                                // 문자열 route 대신 id로 popUpTo (가장 호환성이 좋음)
+                                popUpTo(registerGraphId) {
+                                    inclusive = true
+                                    saveState = false
+                                }
+                                launchSingleTop = true
+                                restoreState = false
+                            }
+                        } else {
+                            // 혹시 그래프가 스택에 없으면 그냥 바로 이동
+                            navController.navigate("main_screen") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MainBlue
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = MainBlue),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(
-                        text = "확인",
-                        color = White,
-                        fontSize = 18.sp
-                    )
+                    Text("확인", color = White, fontSize = 18.sp)
                 }
             }
         }

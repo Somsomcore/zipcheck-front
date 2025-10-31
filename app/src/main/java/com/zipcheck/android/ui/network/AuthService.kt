@@ -2,6 +2,7 @@ package com.zipcheck.android.ui.network
 
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 data class SocialLoginRequest(
@@ -24,8 +25,9 @@ data class LoginResult(
 
 data class User(
     val id: Int,
-    val name: String?,
-    val email: String
+    val name: String?,         // nullable 유지
+    val email: String,
+    val role: String
 )
 
 //본인 인증
@@ -52,14 +54,25 @@ data class TestTokenResponse(
 
 interface AuthService {
     @POST("/api/auth")
-    fun socialLogin(@Body body: SocialLoginRequest): Call<SocialLoginResponse>
+    fun socialLogin(
+        @Body body: SocialLoginRequest
+    ): Call<SocialLoginResponse>
 
     @POST("/api/auth/verification-code")
-    fun sendVerificationCode(@Body body: VerificationCodeRequest): Call<VerificationCodeResponse>
+    fun sendVerificationCode(
+        @Header("Authorization") authorization: String,
+        @Body body: VerificationCodeRequest
+    ): Call<VerificationCodeResponse>
 
     @POST("/api/auth/verification")
-    fun verifyCode(@Body body: VerifyCodeRequest): Call<VerifyCodeResponse>
+    fun verifyCode(
+        @Header("Authorization") authorization: String,
+        @Body body: VerifyCodeRequest
+    ): Call<VerifyCodeResponse>
 
     @POST("/api/auth/test-token")
-    fun testToken(@Body body: TestTokenRequest): Call<TestTokenResponse>
+    fun testToken(
+        @Header("Authorization") authorization: String,
+        @Body body: TestTokenRequest
+    ): Call<TestTokenResponse>
 }
