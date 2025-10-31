@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.*
 
 class MyRiskListViewModel(
     private val repo: RiskRepository,
-    private val accessToken: String
+    private val accessToken: String,
+    private val year: Int,
+    private val month: Int
 ) : ViewModel() {
 
     private val _items = MutableStateFlow<List<MyRiskItem>>(emptyList())
@@ -25,10 +27,10 @@ class MyRiskListViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    fun load(page: Int = 0, size: Int = 10) {
+    fun load(page: Int = 0, size: Int = 10, year: Int, month: Int) {
         val now = LocalDate.now()
-        val year = now.year
-        val month = now.monthValue
+        val year = year
+        val month = month
 
         viewModelScope.launch {
             _loading.value = true

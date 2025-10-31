@@ -48,8 +48,8 @@ data class RiskResult(
     val addressDetail: String
 )
 
-fun MyRiskItem.toRiskAnalysisResult(): RiskAnalysisResult =
-    RiskAnalysisResult(
+fun MyRiskItem.toRiskAnalysisResult(): MyRiskItem =
+    MyRiskItem(
         riskId = riskId,
         userId = userId,
         riskScore = riskScore,

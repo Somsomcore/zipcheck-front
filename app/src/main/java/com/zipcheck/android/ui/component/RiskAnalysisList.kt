@@ -24,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.zipcheck.android.R
+import com.zipcheck.android.data.model.report.MyRiskItem
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.theme.BorderGray
 import com.zipcheck.android.ui.theme.ExampleTextGray
@@ -33,9 +34,9 @@ private const val MAX_ITEMS = 5
 
 @Composable
 fun RiskAnalysisList(
-    results: List<RiskAnalysisResult>,
+    results: List<MyRiskItem>,
     onAddClicked: () -> Unit,
-    onItemClicked: (RiskAnalysisResult) -> Unit,
+    onItemClicked: (MyRiskItem) -> Unit,
     navController: NavHostController
 ) {
     Column(modifier = Modifier.padding(vertical = 16.dp)) {

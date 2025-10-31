@@ -86,10 +86,12 @@ import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListVMFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListViewModel
+import com.zipcheck.android.ui.viewmodel.RiskViewModel
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
+import java.util.Date
 import kotlin.collections.map
 
 class MainActivity : ComponentActivity() {
@@ -180,30 +182,41 @@ class MainActivity : ComponentActivity() {
                             }
                             MainScreen(navController = navController)
                         }
-//                        composable("risk_analysis_record") {
-//                            LaunchedEffect(Unit) {
-//                                showBottomBar.value = false
-//                            }
-//                            RiskAnalysisRecordScreen(navController = navController)
-//                        }
-//                        composable("risk_analysis_result") {
-//                            LaunchedEffect(Unit) {
-//                                showBottomBar.value = false
-//                            }
-//                            RiskAnalysisResultScreen(navController = navController)
-//                        }
+
+                        composable("risk_analysis_record") {
+                            LaunchedEffect(Unit) { showBottomBar.value = false }
+
+                            val context = LocalContext.current
+                            val reportService = remember { RetrofitObj.getRetrofit(context).create(ReportService::class.java) }
+                            val repo = remember { RiskRepository(reportService) }
+                            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4NTUxNSwiZXhwIjoxNzYxODg5MTE1fQ.qgdYpBmg_wvhyuUz84E7Gh6jxT3xS6QIo2mS9NJ5ZQyVdEOEFhiomQgYqIIkSmYKEEIpiMmnV9wgCZOW1cTLeQ"
+                            val vm: MyRiskListViewModel = viewModel(
+                                key = "riskRecordVM",
+                                factory = MyRiskListVMFactory(repo = repo, accessToken = accessToken, year = LocalDate.now().year, month = LocalDate.now().monthValue)
+                            )
+
+                            RiskAnalysisRecordScreen(
+                                navController = navController,
+                                vm = vm
+                            )
+                        }
 
                         composable(
-                            route = "risk_analysis_result/{resultJson}",
-                            arguments = listOf(navArgument("resultJson") { type = NavType.StringType })
+                            route = "risk_analysis_result?resultJson={resultJson}",
+                            arguments = listOf(
+                                navArgument("resultJson") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                }
+                            )
                         ) { backStackEntry ->
-                            val encodedJson = backStackEntry.arguments?.getString("resultJson") ?: ""
-                            val jsonString = URLDecoder.decode(encodedJson, StandardCharsets.UTF_8.name())
+                            val encoded = backStackEntry.arguments?.getString("resultJson") ?: ""
+                            val jsonString = Uri.decode(encoded)
 
                             val gson = Gson()
                             val result = gson.fromJson(jsonString, RiskAnalysisResult::class.java)
 
-                            // ✅ result 객체를 넘겨받아 화면 구성
+                            LaunchedEffect(Unit) { showBottomBar.value = false }
                             RiskAnalysisResultScreen(navController = navController, result = result)
                         }
 
@@ -538,7 +551,7 @@ fun MainScreen(
                 .getRetrofit(context)
                 .create(ReportService::class.java)
         }
-        val accessToken = remember { "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4MTIyNywiZXhwIjoxNzYxODg0ODI3fQ.0YwVMfG2GJtESPyXxLQpNvf1fkG_Nzrcam2Xq7-itVyqTEwBOJtDLY6pN81iZkq_y-Zk9XHVDOe2GRbNQEF0XA" }
+        val accessToken = remember { "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4NTUxNSwiZXhwIjoxNzYxODg5MTE1fQ.qgdYpBmg_wvhyuUz84E7Gh6jxT3xS6QIo2mS9NJ5ZQyVdEOEFhiomQgYqIIkSmYKEEIpiMmnV9wgCZOW1cTLeQ" }
 
         HomeTop5Block(
             reportService = reportService,
@@ -645,7 +658,7 @@ fun MainScreen(
                     contentDescription = "next",
                     modifier = Modifier
                         .size(16.dp)
-                        .clickable { navController.navigate("risk_analysis_record") } // 클릭 시 이전 화면으로 돌아감
+                        .clickable { navController.navigate("risk_analysis_record") }
                 )
             }
 
@@ -653,15 +666,20 @@ fun MainScreen(
 
         val repo = remember { RiskRepository(reportService) }
 
+        val now = LocalDate.now()
+
         val vm: MyRiskListViewModel = viewModel(
             key = "myRiskListVM",
-            factory = MyRiskListVMFactory(repo, accessToken)
-        )
+            factory = MyRiskListVMFactory(repo = repo,
+                accessToken = accessToken,
+                year = now.year,
+                month = now.monthValue)
+            )
 
         val gson = Gson()
 
         LaunchedEffect(Unit) {
-            vm.load(page = 0, size = 10)   // 현재 연/월 기준 호출
+            vm.load(page = 0, size = 10, year = now.year, month = now.monthValue)   // 현재 연/월 기준 호출
         }
 
         val items by vm.items.collectAsState()
@@ -674,8 +692,8 @@ fun MainScreen(
             onAddClicked = { navController.navigate("search") },
             onItemClicked = { result ->
                 val json = gson.toJson(result)
-                val encoded = URLEncoder.encode(json, StandardCharsets.UTF_8.name())
-                navController.navigate("risk_analysis_result/$encoded")
+                val encoded = Uri.encode(json)
+                navController.navigate("risk_analysis_result?resultJson=$encoded")
             } ,
             navController = navController
         )

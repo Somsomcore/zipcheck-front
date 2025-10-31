@@ -1,5 +1,6 @@
 package com.zipcheck.android.data.model.riskAnalysis
 
+import com.zipcheck.android.data.model.report.MyRiskItem
 import java.time.LocalDate
 
 data class RiskAnalysisResult(
@@ -21,11 +22,5 @@ data class RiskAnalysisResult(
 // 날짜별로 그룹화된 데이터 구조
 data class AnalysisGroup(
     val date: LocalDate,
-    val results: List<RiskAnalysisResult>
+    val results: List<MyRiskItem>
 )
-
-// 날짜별로 그룹화
-//val groupedResults = dummyResults
-//    .groupBy { it.date }
-//    .map { (date, results) -> AnalysisGroup(date, results) }
-//    .sortedByDescending { it.date } // 최신 날짜부터 표시

@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,34 +39,44 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.google.gson.Gson
 import com.zipcheck.android.R
+import com.zipcheck.android.data.model.report.MyRiskItem
 import com.zipcheck.android.data.model.riskAnalysis.AnalysisGroup
+import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 //import com.zipcheck.android.data.model.riskAnalysis.groupedResults
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.component.MonthYearPicker
+import com.zipcheck.android.ui.component.RiskResultCard
 //import com.zipcheck.android.ui.component.RiskResultCard
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
+import com.zipcheck.android.ui.viewmodel.MyRiskListViewModel
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RiskAnalysisRecordScreen(navController: NavHostController) {
+fun RiskAnalysisRecordScreen(
+    navController: NavHostController,
+    vm: MyRiskListViewModel,
+) {
     // 월 선택 바텀 시트 상태 관리
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedMonth by remember { mutableStateOf(LocalDate.of(2025, 9, 1)) }
 
-    // 현재 표시할 데이터 필터링 (선택된 월)
-//    val currentMonthResults = groupedResults.filter {
-//        it.date.year == selectedMonth.year && it.date.month == selectedMonth.month
-//    }
+    val loading by vm.loading.collectAsState()
+    val error by vm.error.collectAsState()
+    val results by vm.items.collectAsState()
 
     Scaffold(
         containerColor = White,
@@ -85,17 +97,39 @@ fun RiskAnalysisRecordScreen(navController: NavHostController) {
                     .background(TopBar)
             )
 
-            // ── 1. 월 선택 토글 (Header) ──
             MonthToggleHeader(
                 selectedMonth = selectedMonth,
                 onClick = { showBottomSheet = true }
             )
 
-            // ── 2. 날짜별 분석 기록 목록 ──
-//            AnalysisRecordList(
-//                currentMonthResults,
-//                navController = navController
-//            )
+            when {
+                loading -> {
+                    // 로딩 UI
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("불러오는 중…")
+                    }
+                }
+                error != null -> {
+                    // 에러 UI
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("오류: $error", color = Color.Red)
+                    }
+                }
+                results.isEmpty() -> {
+                    // 초기/빈 상태 UI
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "월을 선택해 기록을 불러오세요.", style = MaterialTheme.typography.bodyMedium, color = ExampleTextGray)
+                    }
+                }
+                else -> {
+                    // 날짜별 그룹핑 후 렌더
+                    val groups = groupByDate(results)
+                    AnalysisRecordList(
+                        groupedResults = groups,
+                        navController = navController
+                    )
+                }
+            }
         }
     }
 
@@ -114,6 +148,9 @@ fun RiskAnalysisRecordScreen(navController: NavHostController) {
                 },
                 onConfirm = { year, month ->
                     selectedMonth = LocalDate.of(year, month, 1)
+
+                    vm.load(page = 0, size = 10, year = year, month = month)
+
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                         if (!sheetState.isVisible) showBottomSheet = false
                     }
@@ -149,7 +186,6 @@ fun MonthToggleHeader(selectedMonth: LocalDate, onClick: () -> Unit) {
             }
         }
         Spacer(modifier = Modifier.weight(1f))
-        // 여기에 다른 UI 요소 (예: 필터 아이콘 등)가 올 수 있습니다.
     }
 }
 
@@ -182,13 +218,45 @@ fun AnalysisRecordList(
                 ) {
                     items(group.results) { result ->
                         // 재사용 가능한 분석 결과 카드 컴포넌트
-//                        RiskResultCard(
-//                            result = result,
-//                            onClick = { navController.navigate("search_result") }
-//                        )
+                        val gson = Gson()
+
+                        val json = gson.toJson(result)
+                        val encoded = URLEncoder.encode(json, StandardCharsets.UTF_8.name())
+
+                        RiskResultCard(
+                            result = result,
+                            onClick = {
+                                navController.navigate("risk_analysis_result?resultJson=$encoded")
+                            }
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun MyRiskItem.createdLocalDate(): LocalDate? {
+    val s = this.createdAt ?: return null
+    // 1) yyyy-MM-dd
+    runCatching { return LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE) }
+    // 2) yyyy-MM-ddTHH:mm:ss[.SSS...]
+    runCatching { return java.time.LocalDateTime.parse(s, DateTimeFormatter.ISO_LOCAL_DATE_TIME).toLocalDate() }
+    // 3) offset/zoned (서버가 타임존을 줄 수도 있음)
+    runCatching { return java.time.OffsetDateTime.parse(s).toLocalDate() }
+    runCatching { return java.time.ZonedDateTime.parse(s).toLocalDate() }
+    // 4) 최후: 앞 10자리만 자르기
+    return runCatching { LocalDate.parse(s.take(10), DateTimeFormatter.ISO_LOCAL_DATE) }.getOrNull()
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun groupByDate(results: List<MyRiskItem>): List<AnalysisGroup> {
+    val pairs = results.mapNotNull { item ->
+        item.createdLocalDate()?.let { it to item }
+    }
+    return pairs
+        .groupBy({ it.first }, { it.second })
+        .map { (date, items) -> AnalysisGroup(date = date, results = items) }
+        .sortedByDescending { it.date }
 }
