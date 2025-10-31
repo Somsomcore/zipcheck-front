@@ -70,6 +70,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.zipcheck.android.R
+import com.zipcheck.android.data.model.report.RegisterMappings
+import com.zipcheck.android.data.model.report.ReportViewModel
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
@@ -580,84 +582,64 @@ fun <T> WheelPicker(
 @Composable
 fun RegisterScreen2(
     navController: NavHostController,
-    // 이전 페이지에서 넘어온 주소 정보
+    reportVm: ReportViewModel,
     address: String,
     detailAddress: String
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
-    // 상태 변수
-    var fraudType by remember { mutableStateOf("") } // 사기 분류
-    var contractType by remember { mutableStateOf("") } // 계약 형태
-    var contractDate by remember { mutableStateOf<LocalDate?>(null) } // 계약 일자
-    var recognitionDate by remember { mutableStateOf<LocalDate?>(null) } // 사기 인지 일자
+    // UI 표시용 로컬 상태 (라벨/날짜)
+    var fraudType by remember { mutableStateOf("") }
+    var contractType by remember { mutableStateOf("") }
+    var contractDate by remember { mutableStateOf<LocalDate?>(null) }
+    var recognitionDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // BottomSheet 상태
+    // 바텀시트 가시성
     var showFraudTypeSheet by remember { mutableStateOf(false) }
     var showContractTypeSheet by remember { mutableStateOf(false) }
     var showContractDateSheet by remember { mutableStateOf(false) }
     var showRecognitionDateSheet by remember { mutableStateOf(false) }
 
-    // 사기 분류 및 계약 형태 옵션 (두 번째 이미지 참고)
-    val propertyOptions = listOf("아파트/다세대", "빌라", "투룸+", "원룸", "오피스텔", "상가")
-    // 계약 일자 포맷터
+    val classificationOptions = listOf("아파트/다세대", "빌라", "투룸+", "원룸", "오피스텔", "상가")
+    val contractTypeOptions = listOf("전세", "월세", "매매", "단기임대")
     val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.KOREA) }
 
-    // 다음 버튼 활성화 조건: 사기 분류, 계약 형태, 계약 일자 3가지가 모두 입력되어야 함
-    val isNextButtonEnabled = fraudType.isNotEmpty() && contractType.isNotEmpty() && contractDate != null
+    // 진입 시 주소 동기화 (Unresolved reference 방지용 실제 메서드에 맞춰 호출)
+    LaunchedEffect(address, detailAddress) {
+        reportVm.setAddress(address)
+        reportVm.setAddrDetail(detailAddress)
+    }
+
+    val isNextEnabled = fraudType.isNotEmpty() && contractType.isNotEmpty() && contractDate != null
 
     Scaffold(
         containerColor = White,
-        topBar = {
-            CustomTopBar("사기 등록", navController)
-        }
+        topBar = { CustomTopBar("사기 등록", navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        focusManager.clearFocus()
-                    })
-                },
+                .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
         ) {
-            // LinearProgressIndicator (2/3 진행률)
             LinearProgressIndicator(
-                progress = 2f / 3f, // 두 번째 화면이므로 66% 진행률
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp),
+                progress = 2f / 3f,
+                modifier = Modifier.fillMaxWidth().height(5.dp),
                 color = MainBlue,
                 trackColor = Gray
             )
 
-            // 사기 정보 입력 텍스트
-            Column(modifier = Modifier.padding(top = 16.dp)) {
-                Text(
-                    text = "사기 정보를 입력해주세요.",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "멘트가 있으면 좋겠는데 기억이 안나네", // 이미지의 힌트 텍스트
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Spacer(Modifier.height(16.dp))
+            Text("사기 정보를 입력해주세요.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("멘트가 있으면 좋겠는데 기억이 안나네", style = MaterialTheme.typography.bodySmall)
 
-            // 입력 필드 섹션
+            Spacer(Modifier.height(16.dp))
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item {
-                    // 1. 사기 분류 입력
                     ClickableField(
                         label = "사기 분류",
                         value = fraudType,
@@ -667,7 +649,6 @@ fun RegisterScreen2(
                     )
                 }
                 item {
-                    // 2. 계약 형태 입력
                     ClickableField(
                         label = "계약 형태",
                         value = contractType,
@@ -677,136 +658,144 @@ fun RegisterScreen2(
                     )
                 }
                 item {
-                    // 3. 계약 일자 입력 (캘린더 아이콘 추가)
                     ClickableField(
                         label = "계약 일자",
                         value = contractDate?.format(dateFormatter) ?: "",
                         placeholderText = "계약 일자를 선택하세요",
                         isRequired = true,
                         leadingIcon = {
-                            Icon(
-                                painterResource(id = R.drawable.ic_calendar), // 캘린더 아이콘
-                                contentDescription = null,
-                                tint = PlaceholderGray,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Icon(painterResource(id = R.drawable.ic_calendar), contentDescription = null, tint = PlaceholderGray, modifier = Modifier.size(24.dp))
                         },
                         onClick = { showContractDateSheet = true }
                     )
                 }
                 item {
-                    // 4. 사기 인지 일자 입력 (캘린더 아이콘 추가)
                     ClickableField(
                         label = "사기 인지 일자",
                         value = recognitionDate?.format(dateFormatter) ?: "",
                         placeholderText = "사기 인지 일자를 선택하세요",
                         isRequired = false,
                         leadingIcon = {
-                            Icon(
-                                painterResource(id = R.drawable.ic_calendar), // 캘린더 아이콘
-                                contentDescription = null,
-                                tint = PlaceholderGray,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Icon(painterResource(id = R.drawable.ic_calendar), contentDescription = null, tint = PlaceholderGray, modifier = Modifier.size(24.dp))
                         },
                         onClick = { showRecognitionDateSheet = true }
                     )
                 }
-                item { Spacer(modifier = Modifier.height(16.dp)) } // 하단 여백 확보
             }
 
-            // 다음 버튼
             Button(
-                onClick = {
-                    if (isNextButtonEnabled) {
-                        // API 연결을 위해 모든 정보 (주소 + 사기 정보)를 다음 페이지로 넘깁니다.
-                        val allData = mapOf(
-                            "address" to address,
-                            "detailAddress" to detailAddress,
-                            "fraudType" to fraudType,
-                            "contractType" to contractType,
-                            "contractDate" to contractDate?.format(dateFormatter),
-                            "recognitionDate" to recognitionDate?.format(dateFormatter)
-                        )
-                        println("Data for API: $allData")
-                        // 1. Map 객체를 JSON 문자열로 변환합니다.
-                        val gson = Gson()
-                        val jsonString = gson.toJson(allData)
-
-                        // 2. JSON 문자열을 URL 경로에 사용하기 위해 인코딩합니다.
-                        val encodedJson = URLEncoder.encode(jsonString, StandardCharsets.UTF_8.name())
-
-                        // 3. 인코딩된 JSON을 인자로 하여 다음 화면으로 이동합니다.
-                        // "register_screen_3"이 아니라 "register3"일 수 있으니, NavHost에 정의된 라우트 이름을 정확히 사용해야 합니다.
-                        navController.navigate("register_screen_3/$encodedJson")
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(bottom = 16.dp),
-                enabled = isNextButtonEnabled, // 활성화 조건 적용
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isNextButtonEnabled) MainBlue else Gray,
-                    disabledContainerColor = Gray
-                ),
+                onClick = { if (isNextEnabled) navController.navigate("register_screen_3") },
+                modifier = Modifier.fillMaxWidth().height(64.dp).padding(bottom = 16.dp),
+                enabled = isNextEnabled,
+                colors = ButtonDefaults.buttonColors(containerColor = if (isNextEnabled) MainBlue else Gray, disabledContainerColor = Gray),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "다음",
-                    color = if (isNextButtonEnabled) White else Black, // 활성화 시 화이트, 비활성화 시 블랙
-                    fontSize = 18.sp
-                )
+                Text("다음", color = if (isNextEnabled) White else Black, fontSize = 18.sp)
             }
         }
     }
 
-    // 사기 분류 BottomSheet
+    // 사기 분류
     TypeSelectorBottomSheet(
         isVisible = showFraudTypeSheet,
         onDismissRequest = { showFraudTypeSheet = false },
         title = "사기 분류",
-        options = propertyOptions,
-        onSelect = { fraudType = it },
+        options = classificationOptions,
+        onSelect = { label ->
+            fraudType = label
+            RegisterMappings.classificationCode(label)?.let { code ->
+                reportVm.setClassification(code)   // Int 코드 저장
+            }
+        },
         initialSelection = fraudType
     )
 
-    // 계약 형태 BottomSheet
+    // 계약 형태
     TypeSelectorBottomSheet(
         isVisible = showContractTypeSheet,
         onDismissRequest = { showContractTypeSheet = false },
         title = "계약 형태",
-        options = propertyOptions, // 사기 분류와 동일한 옵션을 사용하도록 요청됨
-        onSelect = { contractType = it },
+        options = contractTypeOptions,
+        onSelect = { label ->
+            contractType = label
+            RegisterMappings.contractTypeCode(label)?.let { code ->
+                reportVm.setContractType(code)     // Int 코드 저장
+            }
+        },
         initialSelection = contractType
     )
 
-    // 계약 일자 DatePicker BottomSheet
+    // 계약 일자
     DatePickerBottomSheet(
         isVisible = showContractDateSheet,
         onDismissRequest = { showContractDateSheet = false },
-        onDateSelected = { contractDate = it },
+        onDateSelected = { date ->
+            contractDate = date
+            reportVm.setContractAt(date)           // LocalDate 저장
+        },
         initialDate = contractDate
     )
 
-    // 사기 인지 일자 DatePicker BottomSheet
+    // 인지 일자(선택)
     DatePickerBottomSheet(
         isVisible = showRecognitionDateSheet,
         onDismissRequest = { showRecognitionDateSheet = false },
-        onDateSelected = { recognitionDate = it },
+        onDateSelected = { date ->
+            recognitionDate = date
+            reportVm.setRecognizedAt(date)         // LocalDate 저장
+        },
         initialDate = recognitionDate
     )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewRegisterInfoScreen() {
-    ZipcheckfrontTheme {
-        // 프리뷰를 위해 임시 NavController를 사용하며, 주소 정보는 가짜로 전달
-        RegisterScreen2(
-            navController = rememberNavController(),
-            address = "서울시 강남구 테헤란로",
-            detailAddress = "123-456"
-        )
-    }
+    // 사기 분류
+    TypeSelectorBottomSheet(
+        isVisible = showFraudTypeSheet,
+        onDismissRequest = { showFraudTypeSheet = false },
+        title = "사기 분류",
+        options = classificationOptions,
+        onSelect = { label ->
+            fraudType = label
+            RegisterMappings.classificationCode(label)?.let { code ->
+                reportVm.setClassification(code)   // Int 코드 저장
+            }
+        },
+        initialSelection = fraudType
+    )
+
+    // 계약 형태
+    TypeSelectorBottomSheet(
+        isVisible = showContractTypeSheet,
+        onDismissRequest = { showContractTypeSheet = false },
+        title = "계약 형태",
+        options = contractTypeOptions,
+        onSelect = { label ->
+            contractType = label
+            RegisterMappings.contractTypeCode(label)?.let { code ->
+                reportVm.setContractType(code)     // Int 코드 저장
+            }
+        },
+        initialSelection = contractType
+    )
+
+    // 계약 일자
+    DatePickerBottomSheet(
+        isVisible = showContractDateSheet,
+        onDismissRequest = { showContractDateSheet = false },
+        onDateSelected = { date ->
+            contractDate = date
+            reportVm.setContractAt(date)           // LocalDate 저장
+        },
+        initialDate = contractDate
+    )
+
+    // 인지 일자(선택)
+    DatePickerBottomSheet(
+        isVisible = showRecognitionDateSheet,
+        onDismissRequest = { showRecognitionDateSheet = false },
+        onDateSelected = { date ->
+            recognitionDate = date
+            reportVm.setRecognizedAt(date)         // LocalDate 저장
+        },
+        initialDate = recognitionDate
+    )
 }

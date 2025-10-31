@@ -1,4 +1,5 @@
 package com.zipcheck.android.ui.screen
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,6 +33,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -111,7 +113,8 @@ fun AuthTimer(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NameInputScreen(navController: NavController) {
-    val carriers = remember { listOf("SKT", "KT", "LG U+", "SKT 알뜰폰", "KT 알뜰폰", "LG U+ 알뜰폰", "SKT") }
+    val context = LocalContext.current
+    val carriers = remember { listOf("SKT", "KT", "LG U+", "SKT 알뜰폰", "KT 알뜰폰", "LG U+ 알뜰폰") }
 
     // 🌟 상태 변수
     var name by remember { mutableStateOf("") } // 첫번째 그림의 예시값
@@ -289,35 +292,30 @@ fun NameInputScreen(navController: NavController) {
                         Button(
                             onClick = {
                                 focusManager.clearFocus()
-                                if (phoneNumber.isBlank()) {
-                                    showSnackbar("휴대폰 번호가 입력되지 않았습니다.")
-                                } else {
-                                    // 📡 인증번호 요청 API 호출
-                                    val request = VerificationCodeRequest(phone = phoneNumber)
-                                    RetrofitClient.authService.sendVerificationCode(request)
-                                        .enqueue(object :
-                                            retrofit2.Callback<VerificationCodeResponse> {
-                                            override fun onResponse(
-                                                // 1. retrofit2.Call 사용
-                                                call: Call<VerificationCodeResponse>,
-                                                response: Response<VerificationCodeResponse>
-                                            ) {
-                                                if (response.isSuccessful && response.body()?.isSuccess == true) {
-                                                    showSnackbar("인증번호가 발송되었습니다.")
-                                                    isAuthSheetVisible = true
-                                                } else {
-                                                    showSnackbar("문자 발송 실패: ${response.body()?.message ?: response.message()}")
-                                                }
-                                            }
-
-                                            override fun onFailure(
-                                                call: Call<VerificationCodeResponse>,
-                                                t: Throwable
-                                            ) {
-                                                showSnackbar("네트워크 오류: ${t.message}")
-                                            }
-                                        })
+                                val header = bearerHeader(getServerAccessToken(context))
+                                if (header == null) {
+                                    showSnackbar("로그인 토큰이 없습니다. 먼저 로그인 해주세요.")
+                                    return@Button
                                 }
+                                val request = VerificationCodeRequest(phone = asHyphenPhone(phoneNumber))
+                                RetrofitClient.authService
+                                    .sendVerificationCode(header, request)
+                                    .enqueue(object : retrofit2.Callback<VerificationCodeResponse> {
+                                        override fun onResponse(
+                                            call: Call<VerificationCodeResponse>,
+                                            response: Response<VerificationCodeResponse>
+                                        ) {
+                                            if (response.isSuccessful && response.body()?.isSuccess == true) {
+                                                showSnackbar("인증번호가 발송되었습니다.")
+                                                isAuthSheetVisible = true
+                                            } else {
+                                                showSnackbar("문자 발송 실패: ${response.body()?.message ?: response.message()}")
+                                            }
+                                        }
+                                        override fun onFailure(call: Call<VerificationCodeResponse>, t: Throwable) {
+                                            showSnackbar("네트워크 오류: ${t.message}")
+                                        }
+                                    })
                             },
                             // 인증 완료 상태일 경우 버튼 모양 변경
                             colors = ButtonDefaults.buttonColors(
@@ -386,10 +384,25 @@ fun NameInputScreen(navController: NavController) {
                 showSnackbar(message)
             },
             onResend = {
-                // "다시 보내기" 로직 (타이머 리셋 등)
-                println("인증번호 다시 보내기 요청")
-                // TODO: 여기에 실제 재전송 API 호출 로직을 구현
-                showSnackbar("인증번호를 다시 전송합니다.")
+                val header = bearerHeader(getServerAccessToken(context))
+                if (header == null) {
+                    showSnackbar("로그인 토큰이 없습니다. 먼저 로그인 해주세요.")
+                    return@AuthNumberInputSheet
+                }
+                val req = VerificationCodeRequest(phone = asHyphenPhone(phoneNumber))
+                RetrofitClient.authService.sendVerificationCode(header, req)
+                    .enqueue(object : retrofit2.Callback<VerificationCodeResponse> {
+                        override fun onResponse(call: Call<VerificationCodeResponse>, response: Response<VerificationCodeResponse>) {
+                            if (response.isSuccessful && response.body()?.isSuccess == true) {
+                                showSnackbar("인증번호를 다시 전송했습니다.")
+                            } else {
+                                showSnackbar("재전송 실패: ${response.body()?.message ?: response.message()}")
+                            }
+                        }
+                        override fun onFailure(call: Call<VerificationCodeResponse>, t: Throwable) {
+                            showSnackbar("네트워크 오류: ${t.message}")
+                        }
+                    })
             }
         )
     }
@@ -567,7 +580,7 @@ fun AuthNumberInputSheet(
     onAuthFailed: (message: String) -> Unit, // 5. 실패 메시지를 전달받도록 수정
     onResend: () -> Unit
 ) {
-    // 3. authNumber, isTimeout 변수 선언 (오류 해결)
+    val context = LocalContext.current
     var authNumber by remember { mutableStateOf("") }
     var isAuthNumberFocused by remember { mutableStateOf(false) }
     var isTimeout by remember { mutableStateOf(false) }
@@ -689,27 +702,26 @@ fun AuthNumberInputSheet(
                 ) {
                     Button(
                         onClick = {
+                            val header = bearerHeader(getServerAccessToken(context))
+                            if (header == null) {
+                                onAuthFailed("로그인 토큰이 없습니다. 먼저 로그인 해주세요.")
+                                return@Button
+                            }
+
                             val request = VerifyCodeRequest(authNumber)
-                            RetrofitClient.authService.verifyCode(request)
+                            RetrofitClient.authService.verifyCode(header, request)
                                 .enqueue(object : retrofit2.Callback<VerifyCodeResponse> {
                                     override fun onResponse(
-                                        call: Call<VerifyCodeResponse>, // 1. retrofit2.Call
-                                        response: Response<VerifyCodeResponse> // 1. retrofit2.Response
+                                        call: Call<VerifyCodeResponse>,
+                                        response: Response<VerifyCodeResponse>
                                     ) {
-                                        // 4. VerifyCodeGResponse -> VerifyCodeResponse
                                         if (response.isSuccessful && response.body()?.isSuccess == true) {
-                                            onAuthCompleted() // 3. 성공 콜백 호출
+                                            onAuthCompleted()
                                         } else {
-                                            // 3. 실패 콜백 호출 (메시지 전달)
-                                            onAuthFailed("잘못된 인증번호입니다. 다시 입력해주세요.")
+                                            onAuthFailed(response.body()?.message ?: "잘못된 인증번호입니다. 다시 입력해주세요.")
                                         }
                                     }
-
-                                    override fun onFailure(
-                                        call: Call<VerifyCodeResponse>,
-                                        t: Throwable
-                                    ) {
-                                        // 3. 실패 콜백 호출 (메시지 전달)
+                                    override fun onFailure(call: Call<VerifyCodeResponse>, t: Throwable) {
                                         onAuthFailed("네트워크 오류: ${t.message}")
                                     }
                                 })
@@ -729,6 +741,19 @@ fun AuthNumberInputSheet(
             }
         }
     }
+}
+private fun getServerAccessToken(context: Context): String? =
+    context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        .getString("accessToken", null)
+
+private fun bearerHeader(token: String?): String? = token?.let { "Bearer $it" }
+
+// "01012345678" → "010-1234-5678" (서버 예시 포맷 맞춤)
+private fun asHyphenPhone(raw: String): String {
+    val digits = raw.filter { it.isDigit() }
+    return if (digits.length == 11)
+        "${digits.substring(0,3)}-${digits.substring(3,7)}-${digits.substring(7)}"
+    else digits // 길이 안 맞으면 그대로 (서버가 검증)
 }
 
 // 📱 인증 상태 Enum
