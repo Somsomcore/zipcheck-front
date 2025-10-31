@@ -49,6 +49,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -66,9 +67,11 @@ import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.MyReportItem
 import com.zipcheck.android.data.model.mypage.MyReportTab
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
+import com.zipcheck.android.data.model.report.toRiskAnalysisResult
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.ReportRepository
+import com.zipcheck.android.data.repo.RiskRepository
 import com.zipcheck.android.ui.component.BottomNavigationBar
 import com.zipcheck.android.ui.component.RiskAnalysisList
 import com.zipcheck.android.ui.component.SearchBarOverlay
@@ -81,9 +84,13 @@ import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
+import com.zipcheck.android.ui.viewmodel.MyRiskListVMFactory
+import com.zipcheck.android.ui.viewmodel.MyRiskListViewModel
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
+import kotlin.collections.map
 
 class MainActivity : ComponentActivity() {
 
@@ -179,11 +186,25 @@ class MainActivity : ComponentActivity() {
 //                            }
 //                            RiskAnalysisRecordScreen(navController = navController)
 //                        }
-                        composable("risk_analysis_result") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
-                            RiskAnalysisResultScreen(navController = navController)
+//                        composable("risk_analysis_result") {
+//                            LaunchedEffect(Unit) {
+//                                showBottomBar.value = false
+//                            }
+//                            RiskAnalysisResultScreen(navController = navController)
+//                        }
+
+                        composable(
+                            route = "risk_analysis_result/{resultJson}",
+                            arguments = listOf(navArgument("resultJson") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val encodedJson = backStackEntry.arguments?.getString("resultJson") ?: ""
+                            val jsonString = URLDecoder.decode(encodedJson, StandardCharsets.UTF_8.name())
+
+                            val gson = Gson()
+                            val result = gson.fromJson(jsonString, RiskAnalysisResult::class.java)
+
+                            // ✅ result 객체를 넘겨받아 화면 구성
+                            RiskAnalysisResultScreen(navController = navController, result = result)
                         }
 
                         // Other screen routes
@@ -517,7 +538,7 @@ fun MainScreen(
                 .getRetrofit(context)
                 .create(ReportService::class.java)
         }
-        val accessToken = remember { "YOUR_JWT_ACCESS_TOKEN" }
+        val accessToken = remember { "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4MTIyNywiZXhwIjoxNzYxODg0ODI3fQ.0YwVMfG2GJtESPyXxLQpNvf1fkG_Nzrcam2Xq7-itVyqTEwBOJtDLY6pN81iZkq_y-Zk9XHVDOe2GRbNQEF0XA" }
 
         HomeTop5Block(
             reportService = reportService,
@@ -630,35 +651,38 @@ fun MainScreen(
 
         }
 
-//        val sampleResults = listOf(
-//            RiskAnalysisResult(
-//                id = 1,
-//                address = "경기도 구리시 인창2로 65 (인창동)",
-//                apartment = "힐스테이트 구리역 105동 1604호",
-//                riskPercentage = 88,
-//                riskLevel = "아주 위험",
-//                note = "유사 매물 대비 보증금이 10% 높습니다",
-//                date = LocalDate.of(2025, 9, 14)
-//            ),
-//            RiskAnalysisResult(
-//                id = 2,
-//                address = "경기도 구리시 인창2로 65 (인창동)",
-//                apartment = "힐스테이트 구리역 105동 1604호",
-//                riskPercentage = 60,
-//                riskLevel = "의심",
-//                note = "유사 매물 대비 보증금이 10% 높습니다",
-//                date = LocalDate.of(2025, 9, 14)
-//            )
-            // 여기에 추가 결과들을 넣을 수 있습니다.
-//        )
+        val repo = remember { RiskRepository(reportService) }
 
-        // case 1: 결과 2개 + 추가 카드 1개
-//        RiskAnalysisList(
-//            results = sampleResults,
-//            onAddClicked = { navController.navigate("search_") },
-//            onItemClicked = { result -> println("Clicked: ${result.address}") },
-//            navController = navController
-//        )
+        val vm: MyRiskListViewModel = viewModel(
+            key = "myRiskListVM",
+            factory = MyRiskListVMFactory(repo, accessToken)
+        )
+
+        val gson = Gson()
+
+        LaunchedEffect(Unit) {
+            vm.load(page = 0, size = 10)   // 현재 연/월 기준 호출
+        }
+
+        val items by vm.items.collectAsState()
+        val loading by vm.loading.collectAsState()
+        val error by vm.error.collectAsState()
+
+        // “최근 실행한 위험도 분석” 리스트 바인딩 (샘플 리스트 대신 서버 값 사용)
+        RiskAnalysisList(
+            results = items.map { it.toRiskAnalysisResult() },   // 변환 확장함수 아래 추가
+            onAddClicked = { navController.navigate("search") },
+            onItemClicked = { result ->
+                val json = gson.toJson(result)
+                val encoded = URLEncoder.encode(json, StandardCharsets.UTF_8.name())
+                navController.navigate("risk_analysis_result/$encoded")
+            } ,
+            navController = navController
+        )
+
+        // 로딩/에러 UI는 취향대로
+        if (loading) { /* 로딩 인디케이터 */ }
+        error?.let { /* 에러 토스트/텍스트 */ }
     }
 }
 

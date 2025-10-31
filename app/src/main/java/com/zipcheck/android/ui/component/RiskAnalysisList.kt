@@ -39,8 +39,6 @@ fun RiskAnalysisList(
     navController: NavHostController
 ) {
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
-        // '최근 실행한 위험도 분석' 제목과 '>' 버튼 (생략 가능)
-        // ...
 
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
@@ -49,10 +47,10 @@ fun RiskAnalysisList(
         ) {
             // 1. 기존 분석 결과 카드 표시 (최대 5개)
             items(results.take(MAX_ITEMS)) { result ->
-//                RiskResultCard(
-//                    result = result,
-//                    onClick = { navController.navigate("search_result") }
-//                )
+                RiskResultCard(
+                    result = result,
+                    onClick = { onItemClicked(result) }
+                )
             }
 
             item {

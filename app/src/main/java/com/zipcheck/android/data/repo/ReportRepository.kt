@@ -4,6 +4,8 @@ import android.util.Log
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.MyReportResponse
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
+import com.zipcheck.android.data.model.report.MyRiskAnlyResponse
+import retrofit2.Response
 
 class ReportRepository(
     private val reportService: ReportService
@@ -45,5 +47,16 @@ class ReportRepository(
             Log.e("MyReportAPI", "❌ HTTP ${response.code()} - ${response.message()}")
             throw Exception("API 요청 실패: HTTP ${response.code()} - ${response.message()}")
         }
+    }
+
+    suspend fun getMyRiskList(
+        accessToken: String,
+        year: Int,
+        month: Int,
+        page: Int,
+        size: Int
+    ): Response<MyRiskAnlyResponse> {
+        val bearer = if (accessToken.startsWith("Bearer ")) accessToken else "Bearer $accessToken"
+        return reportService.getMyRiskList(bearer, year, month, page, size)
     }
 }

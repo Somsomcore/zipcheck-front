@@ -9,3 +9,20 @@ data class RiskAnlyRequest(
     val address: String,
     val addressDetail: String
 )
+
+data class MyRiskItem(
+    val riskId: Int,
+    val userId: Int,
+    val riskScore: Double,
+    val riskLevel: String,
+    val depositPct: Double,
+    val average: Double,
+    val minimum: Double,
+    val maximum: Double,
+    val maxPra: Double,
+    val pra: Double,
+    val standardDeviation: Double,
+    val createdAt: String,
+    val address: String,
+    val addressDetail: String
+)

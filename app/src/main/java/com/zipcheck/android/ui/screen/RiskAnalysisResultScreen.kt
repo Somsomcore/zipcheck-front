@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.CircleRed
@@ -32,9 +34,20 @@ import com.zipcheck.android.ui.theme.SectionGray
 import com.zipcheck.android.ui.theme.White
 
 @Composable
-fun RiskAnalysisResultScreen(navController: NavHostController) {
+fun RiskAnalysisResultScreen(
+    navController: NavHostController,
+    result: RiskAnalysisResult
+) {
 
     val scrollState = rememberScrollState()
+
+    val color = when (result.riskLevel.lowercase()) {
+        "critical" -> CircleRed
+        "high"     -> Color(0xFFFF7A00)
+        "medium"   -> Color(0xFFFFC107)
+        "low"      -> MainBlue
+        else       -> MainBlue
+    }
 
     Scaffold(
         containerColor = White,
@@ -63,7 +76,13 @@ fun RiskAnalysisResultScreen(navController: NavHostController) {
                                 fontWeight = FontWeight.Bold
                             )
                         ) {
-                            append("아주 위험")
+                            if (result.riskLevel == "Critical") {
+                                append("매우 위험")
+                            } else if (result.riskLevel == "Danger"){
+                                append("위험")
+                            } else {
+                                append("주의")
+                            }
                         }
                         append(" 입니다")
                     },
@@ -84,7 +103,7 @@ fun RiskAnalysisResultScreen(navController: NavHostController) {
                                 fontWeight = FontWeight.Bold
                             )
                         ) {
-                            append("10%")
+                            append(result.depositPct.toString())
                         }
                         append(" 높습니다")
                     },
@@ -99,14 +118,14 @@ fun RiskAnalysisResultScreen(navController: NavHostController) {
                     circleSize = 200.dp,
                     strokeWidth = 25.dp,
                     fontSize = 48,
-                    riskColor = CircleRed,
-                    riskScore = 88.0
+                    riskColor = color,
+                    riskScore = result.riskScore
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // 최우선 변제 금액 섹션
-//                PriorityRepaymentSection()
+                PriorityRepaymentSection(result.maxPra, result.pra)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -132,7 +151,13 @@ fun RiskAnalysisResultScreen(navController: NavHostController) {
                 )
 
                 // 동면적/동거래 매물 대비 섹션
-//                ComparisonSection()
+                ComparisonSection(
+                    depositPct = result.depositPct,
+                    avg = result.average,
+                    min = result.minimum,
+                    max = result.maximum,
+                    stddev = result.standardDeviation
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 

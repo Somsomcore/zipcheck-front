@@ -1,6 +1,7 @@
 package com.zipcheck.android.data.api
 
 import com.zipcheck.android.data.model.mypage.MyReportResponse
+import com.zipcheck.android.data.model.report.MyRiskAnlyResponse
 import com.zipcheck.android.data.model.report.RiskAnlyRequest
 import com.zipcheck.android.data.model.report.RiskAnlyResponse
 import com.zipcheck.android.data.model.report.Top5Response
@@ -22,4 +23,13 @@ interface ReportService {
 
     @POST("api/real-estate/rent/analyze/{regionCode}")
     suspend fun analyzeRisk(@Header("Authorization") accessToken: String, @Path("regionCode") regionCode: String, @Body riskAnalysisRequest: RiskAnlyRequest): Response<RiskAnlyResponse>
+
+    @GET("api/risks/my-list")
+    suspend fun getMyRiskList(
+        @Header("Authorization") auth: String,        // "Bearer <token>"
+        @Query("year") year: Int,
+        @Query("month") month: Int,
+        @Query("page") page: Int,
+        @Query("size") size: Int
+    ): Response<MyRiskAnlyResponse>
 }
