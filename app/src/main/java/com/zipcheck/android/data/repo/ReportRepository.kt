@@ -59,4 +59,51 @@ class ReportRepository(
         val bearer = if (accessToken.startsWith("Bearer ")) accessToken else "Bearer $accessToken"
         return reportService.getMyRiskList(bearer, year, month, page, size)
     }
+
+    // data/repo/MapRepository.kt
+    data class ReportUi(
+        val reportId: Long,
+        val addr: String,
+        val addrDetail: String?,
+        val chipText: String,      // 예: "깡통전세"
+        val contractTypeText: String, // 예: "전세금"
+        val contractDateText: String, // 예: 2002.12.12
+        val content: String?
+    )
+
+    private fun classificationToChipText(code: Int): String =
+        when (code) {
+            0 -> "깡통전세" // 백엔드 정의에 맞게 추가 매핑
+            1 -> "전세사기 의심"
+            else -> "기타"
+        }
+
+    private fun contractTypeToText(code: Int) = when (code) {
+        0 -> "전세금"
+        1 -> "보증금"
+        else -> "계약 형태"
+    }
+
+
+    private fun isoToYmdDot(s: String?): String {
+        if (s.isNullOrBlank()) return "-"
+        // "2025-10-31T12:57:53.921Z" -> "2025.10.31"
+        return try { s.substring(0,10).replace("-", ".") } catch (_: Exception) { "-" }
+    }
+
+    suspend fun fetchReportsByAddress(addr: String, page: Int = 0, size: Int = 10): List<ReportUi> {
+        val res = reportService.getReports(addr = addr, page = page, size = size)
+        return res.result.reports.map {
+            ReportUi(
+                reportId = it.reportId,
+                addr = it.addr,
+                addrDetail = it.addrDetail,
+                chipText = classificationToChipText(it.classification),
+                contractTypeText = contractTypeToText(it.contractType),
+                contractDateText = isoToYmdDot(it.contractAt),
+                content = it.content
+            )
+        }
+    }
+
 }

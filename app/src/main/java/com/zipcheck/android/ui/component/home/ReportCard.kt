@@ -86,7 +86,7 @@ fun ReportCard(
 }
 
 @Composable
-private fun TypeBadge(text: String) {
+fun TypeBadge(text: String) {
     Box(
         modifier = Modifier
             .background(color = MainBlue, shape = RoundedCornerShape(10.dp))

@@ -9,18 +9,27 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -46,8 +55,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.kakao.vectormap.label.Label
 import com.kakao.vectormap.label.LabelLayer
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
@@ -61,7 +74,11 @@ import com.zipcheck.android.ui.component.SearchBarOverlay
 import kotlinx.coroutines.launch
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.KakaoLocalService
+import com.zipcheck.android.data.api.ReportService
+import com.zipcheck.android.data.repo.ReportRepository
 import com.zipcheck.android.ui.network.KakaoRetrofit
+import androidx.compose.foundation.lazy.items
+import com.zipcheck.android.ui.component.home.TypeBadge
 
 suspend fun geocodeAddress(address: String, kakao: KakaoLocalService): LatLng? {
     if (address.isBlank()) return null
@@ -108,6 +125,9 @@ fun MapScreen(navController: NavHostController) {
     val mapService = remember { retrofit.create(MapService::class.java) }
     val mapRepo = remember { MapRepository(mapService) }
 
+    val reportService = remember { retrofit.create(ReportService::class.java) }
+    val reportRepo = remember { ReportRepository(reportService) }
+
     val kakaoRetrofit = remember { KakaoRetrofit.getRetrofit(context, kakaoRestApiKey) }
     val kakaoService = remember { kakaoRetrofit.create(KakaoLocalService::class.java) }
 
@@ -120,6 +140,14 @@ fun MapScreen(navController: NavHostController) {
 
     var pinsLayer by remember { mutableStateOf<LabelLayer?>(null) }
 
+    var showListSheet by remember { mutableStateOf(false) }
+    var showDetailSheet by remember { mutableStateOf(false) }
+    val listItems = remember { mutableStateListOf<ReportRepository.ReportUi>() }
+    var detailItem by remember { mutableStateOf<ReportRepository.ReportUi?>(null) }
+
+// 라벨ID -> 주소 매핑 (마커 클릭 시 addr 필요)
+    val labelToAddr = remember { mutableMapOf<Label, String>() }
+
     // 백엔드 호출 → 지도에 반영
     fun refreshPins(center: LatLng, radiusMeters: Int = 5000) {
         scope.launch {
@@ -130,13 +158,14 @@ fun MapScreen(navController: NavHostController) {
                     radiusMeters = radiusMeters
                 )
 
-                val layer = pinsLayer ?: kakaoMap?.labelManager?.layer
+                val layer = pinsLayer
                 if (layer == null) {
                     Log.e("MapScreen", "Label layer is null. Skip drawing pins.")
                     toast("레이어 준비 중… 잠시 후 다시 시도")
                     return@launch
                 }
 
+                layer.setClickable(true)
                 layer.removeAll()
 
                 var added = 0
@@ -160,8 +189,8 @@ fun MapScreen(navController: NavHostController) {
                     val style = LabelStyle.from(R.drawable.marker)
 
                     val label = LabelOptions.from(pos).setStyles(style)
-                    layer.addLabel(label)
-                    added++
+                    val added = layer.addLabel(label)
+                    labelToAddr[added] = item.address
                 }
 
                 Log.d("MapScreen", "Fetched=${data.size}, Added=$added")
@@ -172,7 +201,6 @@ fun MapScreen(navController: NavHostController) {
             }
         }
     }
-
 
     // 1) 최초 진입 시(또는 해당 화면 재진입 시) 안전하게 권한 요청
     LaunchedEffect(perms.permissions) {
@@ -193,6 +221,24 @@ fun MapScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(paddingValues) // 👈 Scafflod의 상단바 높이만큼 공간 확보
         ) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+            if (showListSheet) {
+                ModalBottomSheet(onDismissRequest = { showListSheet = false }, sheetState = sheetState, containerColor = White,) {
+                    ReportListSheet(items = listItems) { clicked ->
+                        detailItem = clicked
+                        showDetailSheet = true
+                        showListSheet = false
+                    }
+                }
+            }
+
+            if (showDetailSheet && detailItem != null) {
+                ModalBottomSheet(onDismissRequest = { showDetailSheet = false }, sheetState = sheetState, containerColor = White,) {
+                    ReportDetailSheet(detailItem!!)   // 아래 예시 참고
+                }
+            }
+
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { mapView } // MapView 인스턴스 반환
@@ -246,6 +292,41 @@ fun MapScreen(navController: NavHostController) {
                             @SuppressLint("MissingPermission")
                             override fun onMapReady(map: KakaoMap) {
                                 kakaoMap = map
+                                pinsLayer = map.labelManager?.layer
+
+                                map.setOnLabelClickListener { _, _, clickedLabel ->
+                                    Log.d("MapScreen", "Marker clicked! Label ID: ${clickedLabel.layer}") // 👈 로그 추가 1
+
+                                    val addr = labelToAddr[clickedLabel]
+
+                                    if (addr == null) {
+                                        Log.e("MapScreen", "LabelToAddr map failed for marker.") // 👈 로그 추가 2
+                                        toast("마커 정보 오류")
+                                        return@setOnLabelClickListener false
+                                    }
+
+                                    Log.d("MapScreen", "Address found: $addr") // 👈 로그 추가 3
+
+                                    scope.launch {
+                                        try {
+                                            val reports = reportRepo.fetchReportsByAddress(addr, page = 0, size = 10)
+                                            if (reports.size <= 1) {
+                                                detailItem = reports.firstOrNull()
+                                                showDetailSheet = detailItem != null
+                                                showListSheet = false
+                                            } else {
+                                                listItems.clear()
+                                                listItems.addAll(reports)
+                                                showListSheet = true
+                                                showDetailSheet = false
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("MapScreen", "getReports error: ${e.message}", e)
+                                            toast("신고 목록을 불러오지 못했어요")
+                                        }
+                                    }
+                                    true
+                                }
 
                                 // 위치 업데이트를 요청하고, 위치가 업데이트되면 맵을 이동시킵니다.
                                 locationManager.requestLocationUpdates(
@@ -313,4 +394,84 @@ fun addMarker(map: KakaoMap, position: LatLng) {
 
     // 실제 마커 생성
     labelLayer.addLabel(label)
+}
+
+@Composable
+private fun ReportDetailSheet(item: ReportRepository.ReportUi) {
+    Column(
+        Modifier.fillMaxWidth().padding(20.dp).background(White)
+    ) {
+        TypeBadge(item.chipText)
+        Spacer(Modifier.height(8.dp))
+        Text(item.addr, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Black)
+        if (!item.addrDetail.isNullOrBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(item.addrDetail!!, fontSize = 13.sp, color = Color(0xFF7A7A7A))
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("계약 형태", fontSize = 12.sp, color = Color(0xFF7A7A7A))
+            Spacer(Modifier.weight(1f))
+            Text(item.contractTypeText, fontSize = 13.sp)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("계약 일자", fontSize = 12.sp, color = Color(0xFF7A7A7A))
+            Spacer(Modifier.weight(1f))
+            Text(item.contractDateText, fontSize = 13.sp)
+        }
+        Spacer(Modifier.height(12.dp))
+        if (!item.content.isNullOrBlank()) Text(item.content!!, fontSize = 13.sp)
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
+
+@Composable
+private fun ReportListSheet(
+    items: List<ReportRepository.ReportUi>,
+    onClick: (ReportRepository.ReportUi) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .background(White)
+    ) {
+        items(items) { item ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .pointerInput(item.reportId) {
+                        detectTapGestures(onTap = { onClick(item) })
+                    },
+                colors = CardDefaults.cardColors(containerColor = White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    TypeBadge(item.chipText)
+
+                    Spacer(Modifier.height(8.dp))
+                    Text(item.addr, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+
+                    if (!item.addrDetail.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(item.addrDetail!!, fontSize = 12.sp, color = Color(0xFF7A7A7A))
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                    // ⬇️ Row 임포트 필요: import androidx.compose.foundation.layout.Row
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("계약 일자", fontSize = 12.sp, color = Color(0xFF7A7A7A))
+                        Spacer(Modifier.weight(1f))
+                        Text(item.contractDateText, fontSize = 13.sp)
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider()
+                }
+            }
+        }
+        item { Spacer(Modifier.height(20.dp)) }
+    }
 }

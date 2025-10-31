@@ -2,6 +2,7 @@ package com.zipcheck.android.data.api
 
 import com.zipcheck.android.data.model.mypage.MyReportResponse
 import com.zipcheck.android.data.model.report.MyRiskAnlyResponse
+import com.zipcheck.android.data.model.report.ReportListResponse
 import com.zipcheck.android.data.model.report.RiskAnlyRequest
 import com.zipcheck.android.data.model.report.RiskAnlyResponse
 import com.zipcheck.android.data.model.report.Top5Response
@@ -32,4 +33,11 @@ interface ReportService {
         @Query("page") page: Int,
         @Query("size") size: Int
     ): Response<MyRiskAnlyResponse>
+
+    @GET("api/report")
+    suspend fun getReports(
+        @Query("addr") addr: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): ReportListResponse
 }
