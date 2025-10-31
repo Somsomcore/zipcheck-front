@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,11 +73,16 @@ fun RiskAnalysisRecordScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
-    var selectedMonth by remember { mutableStateOf(LocalDate.of(2025, 9, 1)) }
+    var selectedMonth by remember { mutableStateOf(LocalDate.of(LocalDate.now().year, LocalDate.now().monthValue, 1)) }
 
     val loading by vm.loading.collectAsState()
     val error by vm.error.collectAsState()
     val results by vm.items.collectAsState()
+
+    LaunchedEffect(Unit) {
+        vm.clear()              // items / error / loading 상태 초기화
+        selectedMonth = LocalDate.of(LocalDate.now().year, LocalDate.now().monthValue, 1) // 기본 월(표시용)도 초기화
+    }
 
     Scaffold(
         containerColor = White,
@@ -202,7 +208,6 @@ fun AnalysisRecordList(
     ) {
         groupedResults.forEach { group ->
             item {
-                // 날짜 헤더 (예: 2025년 9월 14일)
                 Text(
                     text = group.date.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일")),
                     style = MaterialTheme.run { typography.titleMedium.copy(fontWeight = FontWeight.SemiBold) },

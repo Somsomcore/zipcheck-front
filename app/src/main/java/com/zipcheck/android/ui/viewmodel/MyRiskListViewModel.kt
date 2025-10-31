@@ -69,4 +69,10 @@ class MyRiskListViewModel(
             }
         }
     }
+
+    fun clear() {
+        _items.value = emptyList()
+        _error.value = null
+        _loading.value = false
+    }
 }
