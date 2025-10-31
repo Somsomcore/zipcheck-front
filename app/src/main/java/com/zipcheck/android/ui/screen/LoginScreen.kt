@@ -202,7 +202,8 @@ private fun loginWithKakaoAccount(
         }
     }
 }
-
+private fun bearer(token: String?) = token?.let { "Bearer $it" }
+// 카카오 로그인 성공 시 서버 로그인 호출
 private fun handleKakaoLogin(
     accessToken: String,
     service: AuthService,
@@ -211,31 +212,35 @@ private fun handleKakaoLogin(
 ) {
     val request = SocialLoginRequest("KAKAO", accessToken)
 
-    service.socialLogin(request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+    service.socialLogin(bearer(accessToken), request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
         override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body?.isSuccess == true) {
-                    val user = body.result?.user
-                    if (user?.name.isNullOrBlank()) {
-                        navController.navigate("login_screen_name")
-                    } else {
-                        Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                        val sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-                        with(sharedPrefs.edit()) {
-                            putString("accessToken", body.result?.accessToken)
-                            putString("refreshToken", body.result?.refreshToken)
-                            apply()
-                        }
-                        navController.navigate("main_screen") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
+            if (!response.isSuccessful) {
+                showHttpDebugToast(context, response, "AUTH")
+                return
+            }
+            val body = response.body()
+            if (body?.isSuccess == true && body.result != null) {
+                val login = body.result
+
+                // ✅ 서버 발급 토큰 저장 (이 토큰으로 인증 API 호출)
+                val shared = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                with(shared.edit()) {
+                    putString("accessToken", login.accessToken)
+                    putString("refreshToken", login.refreshToken)
+                    apply()
+                }
+
+                val user = login.user
+                if (user.name.isNullOrBlank()) {
+                    navController.navigate("login_screen_name")
                 } else {
-                    Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
+                    navController.navigate("main_screen") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
             } else {
-                Toast.makeText(context, "응답 오류", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -252,32 +257,33 @@ private fun handleNaverLogin(
     navController: NavController
 ) {
     val request = SocialLoginRequest("NAVER", accessToken)
-
-    service.socialLogin(request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+    service.socialLogin(bearer(accessToken), request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
         override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body?.isSuccess == true) {
-                    val user = body.result?.user
-                    if (user?.name.isNullOrBlank()) {
-                        navController.navigate("login_screen_name")
-                    } else {
-                        Toast.makeText(context, "네이버 로그인 성공!", Toast.LENGTH_SHORT).show()
-                        val sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-                        with(sharedPrefs.edit()) {
-                            putString("accessToken", body.result?.accessToken)
-                            putString("refreshToken", body.result?.refreshToken)
-                            apply()
-                        }
-                        navController.navigate("main_screen") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
+            if (!response.isSuccessful) {
+                showHttpDebugToast(context, response, "AUTH")
+                return
+            }
+            val body = response.body()
+            if (body?.isSuccess == true && body.result != null) {
+                val login = body.result
+                val shared = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                with(shared.edit()) {
+                    putString("accessToken", login.accessToken)
+                    putString("refreshToken", login.refreshToken)
+                    apply()
+                }
+
+                val user = login.user
+                if (user.name.isNullOrBlank()) {
+                    navController.navigate("login_screen_name")
                 } else {
-                    Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "네이버 로그인 성공!", Toast.LENGTH_SHORT).show()
+                    navController.navigate("main_screen") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
             } else {
-                Toast.makeText(context, "응답 오류", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -285,4 +291,14 @@ private fun handleNaverLogin(
             Toast.makeText(context, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
         }
     })
+}
+private fun showHttpDebugToast(context: Context, response: Response<*>, tag: String) {
+    val code = response.code()
+    val msg = response.message()
+    val err = try { response.errorBody()?.string()?.take(500) } catch (_: Throwable) { null }
+    Toast.makeText(
+        context,
+        "[$tag] HTTP $code $msg\n${err ?: "(no error body)"}",
+        Toast.LENGTH_LONG
+    ).show()
 }
