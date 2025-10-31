@@ -24,18 +24,6 @@ object RetrofitObj {
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
-
-            // ✅ 1. LoggingInterceptor 먼저 추가
-            .addInterceptor(loggingInterceptor)
-
-            // ✅ 2. AccessToken 헤더 추가
-//            .addInterceptor(AuthInterceptor(tokenManager))
-//
-//            // ✅ 3. 401 Unauthorized 처리
-//            .authenticator(AuthAuthenticator(tokenManager))
-
-            // ✅ 4. refresh token 만료 시 로그인 화면으로
-//            .addInterceptor(ResponseInterceptor(context))
             .build()
 
         return Retrofit.Builder()

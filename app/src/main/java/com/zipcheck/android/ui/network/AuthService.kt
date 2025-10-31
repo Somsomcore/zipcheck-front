@@ -55,7 +55,6 @@ data class TestTokenResponse(
 interface AuthService {
     @POST("/api/auth")
     fun socialLogin(
-        @Header("Authorization") authorization: String?,
         @Body body: SocialLoginRequest
     ): Call<SocialLoginResponse>
 

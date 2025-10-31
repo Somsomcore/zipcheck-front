@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,6 +42,8 @@ import com.zipcheck.android.R
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.os.Build
+import android.util.Base64
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -78,6 +81,7 @@ import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -85,17 +89,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        try {
-//            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
-//            for (signature in info.signatures!!) {
-//                val md: MessageDigest = MessageDigest.getInstance("SHA")
-//                md.update(signature.toByteArray())
-//                val keyHash = String(Base64.encode(md.digest(), Base64.NO_WRAP))
-//                Log.d("KeyHash", "키 해시: $keyHash")
-//            }
-//        } catch (e: Exception) {
-//            Log.e("KeyHash", "키 해시 얻기 실패", e)
-//        }
+        try {
+            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+            for (signature in info.signatures!!) {
+                val md: MessageDigest = MessageDigest.getInstance("SHA")
+                md.update(signature.toByteArray())
+                val keyHash = String(Base64.encode(md.digest(), Base64.NO_WRAP))
+                Log.d("KeyHash", "키 해시: $keyHash")
+            }
+        } catch (e: Exception) {
+            Log.e("KeyHash", "키 해시 얻기 실패", e)
+        }
 
         setContent {
             ZipcheckfrontTheme {
@@ -114,7 +118,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "register_graph", //main_screen
+                        startDestination = "login_screen", //main_screen
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -477,8 +481,7 @@ fun MainScreen(
         val accessToken = remember { "YOUR_JWT_ACCESS_TOKEN" }
 
         HomeTop5Block(
-            reportService = reportService,
-            accessToken = accessToken
+            reportService = reportService
         )
 
         Spacer(Modifier.height(32.dp))
@@ -493,7 +496,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .clickable(onClick = { navController.navigate("register") }),
+                    .clickable(onClick = { navController.navigate("register_graph") }),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             ) {
@@ -542,6 +545,7 @@ fun MainScreen(
                                 contentDescription = "Go",
                                 tint = ExampleTextGray,
                                 modifier = Modifier.size(10.dp)
+                                    .clickable { navController.navigate("register_graph") }
                             )
                         }
                     }
@@ -621,12 +625,11 @@ fun MainScreen(
 
 @Composable
 fun HomeTop5Block(
-    reportService: ReportService,
-    accessToken: String // 서버 토큰
+    reportService: ReportService
 ) {
     TopReportsSection(
         reportService = reportService,
-        accessToken = accessToken,          // "Bearer " 안붙였어도 자동으로 붙여줌
-        addBearerIfMissing = true
+        accessToken = "",          // 또는 null 전달
+        addBearerIfMissing = false // 자동 추가 안함
     )
 }
