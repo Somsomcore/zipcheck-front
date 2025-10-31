@@ -202,7 +202,6 @@ private fun loginWithKakaoAccount(
         }
     }
 }
-private fun bearer(token: String?) = token?.let { "Bearer $it" }
 // 카카오 로그인 성공 시 서버 로그인 호출
 private fun handleKakaoLogin(
     accessToken: String,
@@ -210,12 +209,13 @@ private fun handleKakaoLogin(
     context: Context,
     navController: NavController
 ) {
-    val request = SocialLoginRequest("KAKAO", accessToken)
+    val request = SocialLoginRequest(provider = "KAKAO", accessToken = accessToken)
 
-    service.socialLogin(bearer(accessToken), request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+    service.socialLogin(request)  // ✅ 헤더 파라미터 제거
+        .enqueue(object : retrofit2.Callback<SocialLoginResponse> {
         override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
             if (!response.isSuccessful) {
-                showHttpDebugToast(context, response, "AUTH")
+                Toast.makeText(context, "응답 오류", Toast.LENGTH_SHORT).show()
                 return
             }
             val body = response.body()
@@ -232,7 +232,7 @@ private fun handleKakaoLogin(
 
                 val user = login.user
                 if (user.name.isNullOrBlank()) {
-                    navController.navigate("login_screen_name")
+                    navController.navigate("main_screen")
                 } else {
                     Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
                     navController.navigate("main_screen") {
@@ -256,8 +256,9 @@ private fun handleNaverLogin(
     context: Context,
     navController: NavController
 ) {
-    val request = SocialLoginRequest("NAVER", accessToken)
-    service.socialLogin(bearer(accessToken), request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+    val request = SocialLoginRequest(provider = "NAVER", accessToken = accessToken)
+    service.socialLogin(request)  // ✅ 헤더 파라미터 제거
+        .enqueue(object : retrofit2.Callback<SocialLoginResponse> {
         override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
             if (!response.isSuccessful) {
                 showHttpDebugToast(context, response, "AUTH")

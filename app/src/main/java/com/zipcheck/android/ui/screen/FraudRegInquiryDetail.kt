@@ -363,7 +363,8 @@ fun FraudRegInquiryDetailScreen(
     }
 }
 
-// --- Composable Sub-Functions ---
+
+
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
