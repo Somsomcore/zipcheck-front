@@ -38,10 +38,10 @@ import com.zipcheck.android.R
 import com.kakao.sdk.user.UserApiClient
 import com.navercorp.nid.NaverIdLoginSDK
 import com.navercorp.nid.oauth.OAuthLoginCallback
-import com.zipcheck.android.ui.network.AuthService
-import com.zipcheck.android.ui.network.RetrofitClient
-import com.zipcheck.android.ui.network.SocialLoginRequest
-import com.zipcheck.android.ui.network.SocialLoginResponse
+import com.zipcheck.android.data.api.AuthService
+import com.zipcheck.android.data.api.SocialLoginRequest
+import com.zipcheck.android.data.api.SocialLoginResponse
+import com.zipcheck.android.data.network.RetrofitObj
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Response
@@ -51,7 +51,7 @@ fun LoginScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val service = RetrofitClient.authService
+    val service = RetrofitObj.getRetrofit(context).create(AuthService::class.java)
     // NameInputScreen으로부터 결과를 받아서 처리하는 부분
     val signupResult = navController.currentBackStackEntry
         ?.savedStateHandle

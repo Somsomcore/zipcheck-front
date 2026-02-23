@@ -1,4 +1,4 @@
-package com.zipcheck.android.ui.network
+package com.zipcheck.android.data.api
 
 import retrofit2.Call
 import retrofit2.http.Body
@@ -21,6 +21,27 @@ data class LoginResult(
     val accessToken: String,
     val refreshToken: String,
     val user: User
+)
+
+data class LogoutResult(
+    val isSuccess: Boolean,
+    val code: String?,
+    val message: String?,
+    val result: LoginResult?
+)
+
+data class RefreshTokenRequest(
+    val refreshToken: String
+)
+data class RefreshTokenResponse(
+    val isSuccess: Boolean,
+    val code: String?,
+    val message: String?,
+    val result: RefreshTokenResult
+)
+data class RefreshTokenResult(
+    val accessToken: String,
+    val refreshToken: String
 )
 
 data class User(
@@ -70,9 +91,14 @@ interface AuthService {
         @Body body: VerifyCodeRequest
     ): Call<VerifyCodeResponse>
 
-    @POST("/api/auth/test-token")
-    fun testToken(
+    @POST("/api/auth/refresh")
+    fun refreshToken(
         @Header("Authorization") authorization: String,
-        @Body body: TestTokenRequest
-    ): Call<TestTokenResponse>
+        @Body body: RefreshTokenRequest
+    ): Call<RefreshTokenResponse>
+
+    @POST("/api/auth/logout")
+    fun logout(
+        @Header("Authorization") authorization: String
+    ): Call<LogoutResult>
 }

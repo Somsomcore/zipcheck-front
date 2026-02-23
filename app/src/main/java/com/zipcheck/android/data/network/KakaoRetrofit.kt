@@ -1,11 +1,13 @@
-package com.zipcheck.android.ui.network
+package com.zipcheck.android.data.network
 
 import android.content.Context
+import android.os.Build
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 // KakaoRetrofit.kt
@@ -33,9 +35,9 @@ object KakaoRetrofit {
             // ✅ KA 헤더 구성 (os / origin 필수)
             val ka = buildString {
                 append("sdk/1.0 ")
-                append("os/android-${android.os.Build.VERSION.SDK_INT} ")
-                append("lang/${java.util.Locale.getDefault()} ")
-                append("device/${android.os.Build.MODEL} ")
+                append("os/android-${Build.VERSION.SDK_INT} ")
+                append("lang/${Locale.getDefault()} ")
+                append("device/${Build.MODEL} ")
                 append("origin/$pkg ")
                 append("app/$pkg ")
                 append("ver/$verName")
@@ -47,7 +49,7 @@ object KakaoRetrofit {
                 // 선택: User-Agent 있으면 도움 될 때 있음
                 .header(
                     "User-Agent",
-                    "Android ${android.os.Build.VERSION.RELEASE}; ${android.os.Build.MODEL}"
+                    "Android ${Build.VERSION.RELEASE}; ${Build.MODEL}"
                 )
                 .build()
 
