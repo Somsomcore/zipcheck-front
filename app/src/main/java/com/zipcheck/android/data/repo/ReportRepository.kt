@@ -91,8 +91,8 @@ class ReportRepository(
         return try { s.substring(0,10).replace("-", ".") } catch (_: Exception) { "-" }
     }
 
-    suspend fun fetchReportsByAddress(addr: String, page: Int = 0, size: Int = 10): List<ReportUi> {
-        val res = reportService.getReports(addr = addr, page = page, size = size)
+    suspend fun fetchReportsByAddress(token: String, addr: String, page: Int = 0, size: Int = 10): List<ReportUi> {
+        val res = reportService.getReports(auth = token, addr = addr, page = page, size = size)
         return res.result.reports.map {
             ReportUi(
                 reportId = it.reportId,

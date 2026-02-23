@@ -74,6 +74,7 @@ import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.repo.ReportRepository
 import com.zipcheck.android.data.network.KakaoRetrofit
 import androidx.compose.foundation.lazy.items
+import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.ui.component.home.TypeBadge
 
 suspend fun geocodeAddress(address: String, kakao: KakaoLocalService): LatLng? {
@@ -95,6 +96,8 @@ suspend fun geocodeAddress(address: String, kakao: KakaoLocalService): LatLng? {
 fun MapScreen(navController: NavHostController) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+
+    val token = getAccessToken() ?: ""
 
     // 1. MapView 인스턴스를 remember로 유지
     val mapView = remember {
@@ -305,7 +308,7 @@ fun MapScreen(navController: NavHostController) {
 
                                     scope.launch {
                                         try {
-                                            val reports = reportRepo.fetchReportsByAddress(addr, page = 0, size = 10)
+                                            val reports = reportRepo.fetchReportsByAddress(token, addr, page = 0, size = 10)
                                             if (reports.size <= 1) {
                                                 detailItem = reports.firstOrNull()
                                                 showDetailSheet = detailItem != null

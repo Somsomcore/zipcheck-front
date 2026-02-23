@@ -36,6 +36,7 @@ interface ReportService {
 
     @GET("api/report")
     suspend fun getReports(
+        @Header("Authorization") auth: String,
         @Query("addr") addr: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10
