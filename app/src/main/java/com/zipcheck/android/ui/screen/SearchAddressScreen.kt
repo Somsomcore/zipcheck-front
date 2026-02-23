@@ -46,7 +46,7 @@ import androidx.navigation.NavController
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.MapService
 import com.zipcheck.android.data.repo.AddressRepository
-import com.zipcheck.android.ui.network.KakaoRetrofit
+import com.zipcheck.android.data.network.KakaoRetrofit
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.Gray

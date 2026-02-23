@@ -12,10 +12,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -29,10 +27,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -40,31 +36,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.coerceAtMost
-import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 // import com.google.android.gms.common.api.Response // 이 임포트도 Retrofit의 Response와 충돌할 수 있으므로 제거
 import com.zipcheck.android.R
+import com.zipcheck.android.data.api.AuthService
 import com.zipcheck.android.ui.component.CustomTopBar
-import com.zipcheck.android.ui.network.RetrofitClient
-import com.zipcheck.android.ui.network.VerificationCodeRequest
-import com.zipcheck.android.ui.network.VerificationCodeResponse
-import com.zipcheck.android.ui.network.VerifyCodeRequest
-import com.zipcheck.android.ui.network.VerifyCodeResponse
-import com.zipcheck.android.ui.theme.PurpleGrey80
+import com.zipcheck.android.data.api.VerificationCodeRequest
+import com.zipcheck.android.data.api.VerificationCodeResponse
+import com.zipcheck.android.data.api.VerifyCodeRequest
+import com.zipcheck.android.data.api.VerifyCodeResponse
+import com.zipcheck.android.data.network.RetrofitObj
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 // 1. Retrofit의 Call과 Response를 명시적으로 임포트
 import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Response
-import kotlin.math.abs
-import kotlin.text.find
-import kotlin.text.toFloat
 import kotlin.time.Duration.Companion.seconds
 
 // 🎨 색상 정의 (사용자 이미지 기반)
@@ -298,9 +289,9 @@ fun NameInputScreen(navController: NavController) {
                                     return@Button
                                 }
                                 val request = VerificationCodeRequest(phone = asHyphenPhone(phoneNumber))
-                                RetrofitClient.authService
+                                RetrofitObj.getRetrofit(context).create(AuthService::class.java)
                                     .sendVerificationCode(header, request)
-                                    .enqueue(object : retrofit2.Callback<VerificationCodeResponse> {
+                                    .enqueue(object : Callback<VerificationCodeResponse> {
                                         override fun onResponse(
                                             call: Call<VerificationCodeResponse>,
                                             response: Response<VerificationCodeResponse>
@@ -390,8 +381,9 @@ fun NameInputScreen(navController: NavController) {
                     return@AuthNumberInputSheet
                 }
                 val req = VerificationCodeRequest(phone = asHyphenPhone(phoneNumber))
-                RetrofitClient.authService.sendVerificationCode(header, req)
-                    .enqueue(object : retrofit2.Callback<VerificationCodeResponse> {
+                RetrofitObj.getRetrofit(context).create(AuthService::class.java)
+                    .sendVerificationCode(header, req)
+                    .enqueue(object : Callback<VerificationCodeResponse> {
                         override fun onResponse(call: Call<VerificationCodeResponse>, response: Response<VerificationCodeResponse>) {
                             if (response.isSuccessful && response.body()?.isSuccess == true) {
                                 showSnackbar("인증번호를 다시 전송했습니다.")
@@ -709,8 +701,9 @@ fun AuthNumberInputSheet(
                             }
 
                             val request = VerifyCodeRequest(authNumber)
-                            RetrofitClient.authService.verifyCode(header, request)
-                                .enqueue(object : retrofit2.Callback<VerifyCodeResponse> {
+                            RetrofitObj.getRetrofit(context).create(AuthService::class.java)
+                                .verifyCode(header, request)
+                                .enqueue(object : Callback<VerifyCodeResponse> {
                                     override fun onResponse(
                                         call: Call<VerifyCodeResponse>,
                                         response: Response<VerifyCodeResponse>

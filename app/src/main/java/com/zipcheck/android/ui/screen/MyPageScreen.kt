@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.zipcheck.android.R
+import com.zipcheck.android.data.api.AuthService
+import com.zipcheck.android.data.api.LogoutResult
 import com.zipcheck.android.data.api.UserSevice
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.UserInfoRepository
@@ -43,6 +46,7 @@ import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.viewmodel.MyPageViewModel
 import com.zipcheck.android.ui.viewmodel.MyPageViewModelFactory
+import retrofit2.Call
 
 data class SettingsItem(val title: String, val onClick: () -> Unit)
 
@@ -51,9 +55,40 @@ data class SettingsItem(val title: String, val onClick: () -> Unit)
 fun MyPageScreen(
     navController : NavHostController
 ) {
+    val context = navController.context
+    val scope = rememberCoroutineScope() // 비동기 작업을 위한 스코프
+
+    // 로그아웃 함수 정의
+    val onLogoutClick = {
+        val shared = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+        val accessToken = shared.getString("accessToken", "") ?: ""
+
+        val authService = RetrofitObj.getRetrofit(context).create(AuthService::class.java)
+
+        // 서버에 로그아웃 요청
+        authService.logout("Bearer $accessToken").enqueue(object : retrofit2.Callback<LogoutResult> {
+            override fun onResponse(call: Call<LogoutResult>, response: retrofit2.Response<LogoutResult>) {
+                // 서버 응답 성공 여부와 상관없이 로컬 토큰은 삭제하고 이동 (사용자 경험 우선)
+                shared.edit().clear().apply()
+
+                navController.navigate("login_screen") {
+                    // 메인 스택을 비워서 뒤로가기로 마이페이지에 못 오게 함
+                    popUpTo(0) { inclusive = true }
+                }
+                android.widget.Toast.makeText(context, "로그아웃 되었습니다.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onFailure(call: Call<LogoutResult>, t: Throwable) {
+                // 네트워크 오류 시에도 일단 로그아웃 처리
+                shared.edit().clear().apply()
+                navController.navigate("login_screen") { popUpTo(0) }
+            }
+        })
+    }
+
     val menuItems = listOf(
         SettingsItem(title = "내가 쓴 신고글", onClick = { navController.navigate("my_register_screen") }),
-        SettingsItem(title = "로그아웃", onClick = { navController.navigate("login_screen") }),
+        SettingsItem(title = "로그아웃", onClick = { onLogoutClick }),
     )
 
     val repo = remember {

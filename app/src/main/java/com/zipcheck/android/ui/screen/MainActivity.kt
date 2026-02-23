@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -65,10 +66,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.data.api.ReportService
-import com.zipcheck.android.data.model.mypage.MyReportItem
-import com.zipcheck.android.data.model.mypage.MyReportTab
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
 import com.zipcheck.android.data.model.report.toRiskAnalysisResult
 import com.zipcheck.android.data.model.report.ReportViewModel
@@ -90,13 +89,8 @@ import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListVMFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListViewModel
-import com.zipcheck.android.ui.viewmodel.RiskViewModel
-import java.net.URLDecoder
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDate
-import java.util.Date
 import kotlin.collections.map
 
 class MainActivity : ComponentActivity() {
@@ -117,6 +111,19 @@ class MainActivity : ComponentActivity() {
             Log.e("KeyHash", "키 해시 얻기 실패", e)
         }
 
+        val reason = intent.getStringExtra("REASON")
+        val savedToken = getSharedPreferences("auth_prefs", MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        // 401 에러로 왔거나, 저장된 토큰이 없으면 로그인으로 보냄
+        val initialRoute = if (reason == "AUTH_ERROR" || savedToken == null) {
+            "login_screen"
+        } else {
+            "main_screen"
+        }
+
+        val accessToken = getAccessToken() ?: ""
+
         setContent {
             ZipcheckfrontTheme {
                 val navController = rememberNavController()
@@ -134,7 +141,7 @@ class MainActivity : ComponentActivity() {
                     // NavController로 화면 전환 설정
                     NavHost(
                         navController = navController,
-                        startDestination = "main_screen", //main_screen
+                        startDestination = initialRoute,
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -194,7 +201,6 @@ class MainActivity : ComponentActivity() {
                             val context = LocalContext.current
                             val reportService = remember { RetrofitObj.getRetrofit(context).create(ReportService::class.java) }
                             val repo = remember { RiskRepository(reportService) }
-                            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4NTUxNSwiZXhwIjoxNzYxODg5MTE1fQ.qgdYpBmg_wvhyuUz84E7Gh6jxT3xS6QIo2mS9NJ5ZQyVdEOEFhiomQgYqIIkSmYKEEIpiMmnV9wgCZOW1cTLeQ"
                             val vm: MyRiskListViewModel = viewModel(
                                 key = "riskRecordVM",
                                 factory = MyRiskListVMFactory(repo = repo, accessToken = accessToken, year = LocalDate.now().year, month = LocalDate.now().monthValue)
@@ -291,7 +297,7 @@ class MainActivity : ComponentActivity() {
                             }
                             FraudHistoryScreen()
                         }
-                        navigation(startDestination = "register_screen_1", route = "register_graph") {
+
 
                             // 1) 등록 1단계: 주소 입력
                             composable("register_screen_1") { backStackEntry ->
@@ -351,7 +357,7 @@ class MainActivity : ComponentActivity() {
                                 // 완료 화면은 VM 필요 없음
                                 RegisterScreen4(navController = navController)
                             }
-                        }
+
                         composable("my_page") {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
@@ -375,7 +381,7 @@ class MainActivity : ComponentActivity() {
                                 key = "myRegisterVm", // 선택: 프로세스 재생성 시 구분용
                                 factory = MyRegisterViewModelFactory(
                                     repo = repo,
-                                    dummyToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0Mjk0OCwiZXhwIjoxNzYxODQ2NTQ4fQ.uu_IJCZNDBmc9r1nGWQJoNwZPxZQZvU3unyl-C0CuDHMbCVnCbSKFKKsLzURY__wk_NzFrpnQnQ0RTihEgT6XQ",
+                                    dummyToken = accessToken,
                                     status = RegistrationStatus.PENDING,       // 초기 탭(접수) 기준
                                     page = 0,
                                     size = 20
@@ -409,6 +415,8 @@ fun MainScreen(
 
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
+
+    val accessToken = getAccessToken() ?: ""
 
     Column(
         modifier = modifier
@@ -556,7 +564,6 @@ fun MainScreen(
                 .getRetrofit(context)
                 .create(ReportService::class.java)
         }
-        val accessToken = remember { "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg4NTUxNSwiZXhwIjoxNzYxODg5MTE1fQ.qgdYpBmg_wvhyuUz84E7Gh6jxT3xS6QIo2mS9NJ5ZQyVdEOEFhiomQgYqIIkSmYKEEIpiMmnV9wgCZOW1cTLeQ" }
 
         HomeTop5Block(
             reportService = reportService,

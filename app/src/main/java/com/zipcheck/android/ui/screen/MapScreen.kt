@@ -1,7 +1,6 @@
 package com.zipcheck.android.ui.screen
 
 import android.Manifest
-import android.R.attr.label
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,9 +62,7 @@ import com.kakao.vectormap.label.Label
 import com.kakao.vectormap.label.LabelLayer
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
-import com.kakao.vectormap.label.LabelTextBuilder
 import com.zipcheck.android.data.api.MapService
-import com.zipcheck.android.data.model.map.AddrListItem
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.MapRepository
 import com.zipcheck.android.ui.component.CustomTopBar
@@ -76,8 +72,9 @@ import com.zipcheck.android.R
 import com.zipcheck.android.data.api.KakaoLocalService
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.repo.ReportRepository
-import com.zipcheck.android.ui.network.KakaoRetrofit
+import com.zipcheck.android.data.network.KakaoRetrofit
 import androidx.compose.foundation.lazy.items
+import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.ui.component.home.TypeBadge
 
 suspend fun geocodeAddress(address: String, kakao: KakaoLocalService): LatLng? {
@@ -99,6 +96,8 @@ suspend fun geocodeAddress(address: String, kakao: KakaoLocalService): LatLng? {
 fun MapScreen(navController: NavHostController) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+
+    val token = getAccessToken() ?: ""
 
     // 1. MapView 인스턴스를 remember로 유지
     val mapView = remember {
@@ -309,7 +308,7 @@ fun MapScreen(navController: NavHostController) {
 
                                     scope.launch {
                                         try {
-                                            val reports = reportRepo.fetchReportsByAddress(addr, page = 0, size = 10)
+                                            val reports = reportRepo.fetchReportsByAddress(token, addr, page = 0, size = 10)
                                             if (reports.size <= 1) {
                                                 detailItem = reports.firstOrNull()
                                                 showDetailSheet = detailItem != null
