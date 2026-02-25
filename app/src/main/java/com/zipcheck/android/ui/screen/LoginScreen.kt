@@ -4,7 +4,9 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +14,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -30,7 +37,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
@@ -121,67 +130,107 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(40.dp))
 
             // 카카오 로그인 버튼
-            Image(
-                painter = painterResource(id = R.drawable.icon_kakao),
-                contentDescription = "카카오 로그인",
-                contentScale = ContentScale.FillWidth,
+            Button(
+                onClick = {
+                    if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
+                        UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
+                            if (error != null) {
+                                if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
+                                    Toast.makeText(context, "로그인이 취소되었습니다.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "카카오 로그인 실패: ${error.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            } else if (token != null) {
+                                handleKakaoLogin(token.accessToken, service, context, navController)
+                            }
+                        }
+                    } else {
+                        loginWithKakaoAccount(context, service, navController)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .clickable {
-                        // 카카오톡이 설치되어 있으면 카카오톡으로 로그인, 아니면 카카오계정으로 로그인
-                        if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-                            UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
-                                if (error != null) {
-                                    // 사용자가 로그인 취소했는지 확인
-                                    if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
-                                        Toast.makeText(context, "로그인이 취소되었습니다.", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(context, "카카오 로그인 실패: ${error.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else if (token != null) {
-                                    // ✅ 카카오톡 로그인 성공
-                                    handleKakaoLogin(token.accessToken, service, context, navController)
-                                }
-                            }
-                        } else {
-                            // 카카오톡이 없으면 바로 카카오 계정으로 로그인 시도
-                            loginWithKakaoAccount(context, service, navController)
-                        }
-                    }
-            )
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp), // 이미지와 비슷한 둥근 모서리
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFEE500), // 카카오 공식 노란색
+                    contentColor = Color.Black
+                ),
+                contentPadding = PaddingValues(0.dp) // 내부 여백 초기화
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.logo_kakao),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.Unspecified // 아이콘 원래 색상 유지
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "카카오 로그인",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // 네이버 로그인 버튼
-            Image(
-                painter = painterResource(id = R.drawable.icon_naver),
-                contentDescription = "네이버 로그인",
-                contentScale = ContentScale.FillWidth,
+            Button(
+                onClick = {
+                    NaverIdLoginSDK.authenticate(context, object : OAuthLoginCallback {
+                        override fun onSuccess() {
+                            val accessToken = NaverIdLoginSDK.getAccessToken()
+                            if (accessToken != null) {
+                                handleNaverLogin(accessToken, service, context, navController)
+                            } else {
+                                Toast.makeText(context, "토큰을 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        override fun onFailure(httpStatus: Int, message: String) {
+                            Toast.makeText(context, "네이버 로그인 실패: $message", Toast.LENGTH_SHORT).show()
+                        }
+
+                        override fun onError(errorCode: Int, message: String) {
+                            Toast.makeText(context, "네이버 로그인 에러: $message", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .clickable {
-                        NaverIdLoginSDK.authenticate(context, object : OAuthLoginCallback {
-                            override fun onSuccess() {
-                                val accessToken = NaverIdLoginSDK.getAccessToken()
-                                if (accessToken != null) {
-                                    handleNaverLogin(accessToken, service, context, navController)
-                                } else {
-                                    Toast.makeText(context, "토큰을 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-
-                            override fun onFailure(httpStatus: Int, message: String) {
-                                Toast.makeText(context, "네이버 로그인 실패: $message", Toast.LENGTH_SHORT).show()
-                            }
-
-                            override fun onError(errorCode: Int, message: String) {
-                                Toast.makeText(context, "네이버 로그인 에러: $message", Toast.LENGTH_SHORT).show()
-                            }
-                        })
-                    }
-            )
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF03C75A), // 네이버 공식 초록색
+                    contentColor = Color.White // 네이버는 글자가 흰색일 때 가장 잘 보입니다
+                ),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.logo_naver),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp), // 네이버 로고 비율에 맞춰 조정
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "네이버 로그인",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.weight(2f)) // 화면 하단과 버튼 사이 여유 공간
         }
