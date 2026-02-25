@@ -74,30 +74,30 @@ data class TestTokenResponse(
 )
 
 interface AuthService {
-    @POST("/api/auth")
+    @POST("api/auth")
     fun socialLogin(
         @Body body: SocialLoginRequest
     ): Call<SocialLoginResponse>
 
-    @POST("/api/auth/verification-code")
+    @POST("api/auth/verification-code")
     fun sendVerificationCode(
         @Header("Authorization") authorization: String,
         @Body body: VerificationCodeRequest
     ): Call<VerificationCodeResponse>
 
-    @POST("/api/auth/verification")
+    @POST("api/auth/verification")
     fun verifyCode(
         @Header("Authorization") authorization: String,
         @Body body: VerifyCodeRequest
     ): Call<VerifyCodeResponse>
 
-    @POST("/api/auth/refresh")
+    @POST("api/auth/refresh")
     fun refreshToken(
         @Header("Authorization") authorization: String,
         @Body body: RefreshTokenRequest
     ): Call<RefreshTokenResponse>
 
-    @POST("/api/auth/logout")
+    @POST("api/auth/logout")
     fun logout(
         @Header("Authorization") authorization: String
     ): Call<LogoutResult>

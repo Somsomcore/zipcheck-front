@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.report.RiskAnlyRequest
@@ -74,6 +75,8 @@ import com.zipcheck.android.ui.viewmodel.RiskViewModel
 
 @Composable
 fun SearchResultScreen(navController: NavHostController) {
+    val accessToken = getAccessToken() ?: ""
+
     val context = LocalContext.current
 
     val riskService = remember {
@@ -116,7 +119,7 @@ fun SearchResultScreen(navController: NavHostController) {
         if (regionCode.isNotBlank()) {
             Log.d("SearchResultScreen", "🚀 analyze() 호출 시작")
             vm.analyze(
-                accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg1NTkxOSwiZXhwIjoxNzYxODU5NTE5fQ.3b2FqPRRtBu1cDwUXYM5Hv2LHzR0zfARUbfyumymZjRVHUb3H8i9BvtlN8bylMJqqLwPZ_FbcZ7gMF0X8byyqQ",
+                accessToken = accessToken,
                 regionCode = regionCode,
                 req = RiskAnlyRequest(
                     deposit = deposit,

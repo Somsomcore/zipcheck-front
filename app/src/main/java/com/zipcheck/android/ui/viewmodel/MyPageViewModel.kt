@@ -3,6 +3,7 @@ package com.zipcheck.android.ui.viewmodel // 패키지명은 예시입니다.
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.data.repo.UserInfoRepository
 import com.zipcheck.android.ui.state.UserInfoUIState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,8 @@ import kotlinx.coroutines.launch
 class MyPageViewModel(
     private val userInfoRepository: UserInfoRepository
 ) : ViewModel() {
+
+    val accessToken = getAccessToken() ?: ""
 
     // 외부에서 관찰(observe) 가능한 UI 상태
     private val _uiState = MutableStateFlow<UserInfoUIState>(UserInfoUIState.Loading)
@@ -29,7 +32,7 @@ class MyPageViewModel(
             _uiState.value = UserInfoUIState.Loading // 로딩 상태 설정
 
             // NOTE: 실제 앱에서는 SharedPreferences나 다른 저장소에서 Access Token을 가져와야 합니다.
-            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0MTEzNSwiZXhwIjoxNzYxODQ0NzM1fQ.lwc2Hup0GLBQ57MGxJKBJJKvBO6izS7uhIkhxfBIXivrN6MrkPlargNZxnMK_I_JEiEAKKSI6fPexYgQY3c6Aw"
+            val accessToken = accessToken
 
             try {
                 // Repository를 통해 API 호출 (suspend 함수 가정)
