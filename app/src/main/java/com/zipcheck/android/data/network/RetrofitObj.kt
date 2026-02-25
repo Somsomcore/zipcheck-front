@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitObj {
     // base url
-    private const val BASE_URL = "http://default-zipcheck-service-e1cc1-111600641-5f88f4b7229b.kr.lb.naverncp.com/"
+    private const val BASE_URL = "http://172.30.1.72:8080/"
 
     fun getRetrofit(context: Context): Retrofit {
         val tokenManager = TokenManager(context)

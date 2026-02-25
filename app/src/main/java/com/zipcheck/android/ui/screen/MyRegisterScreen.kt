@@ -54,6 +54,7 @@ import kotlinx.coroutines.flow.StateFlow
 fun MyRegisterScreen(
     navController: NavHostController,
     viewModel: MyRegisterViewModel = viewModel(),
+    accessToken : String
 ) {
     var tab by remember { mutableStateOf(MyReportTab.RECEIVED) }
     val uiState by viewModel.uiState.collectAsState()
@@ -65,7 +66,7 @@ fun MyRegisterScreen(
             MyReportTab.REGISTERED -> RegistrationStatus.APPROVED
         }
         viewModel.fetchMyReports(
-            token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0Mjk0OCwiZXhwIjoxNzYxODQ2NTQ4fQ.uu_IJCZNDBmc9r1nGWQJoNwZPxZQZvU3unyl-C0CuDHMbCVnCbSKFKKsLzURY__wk_NzFrpnQnQ0RTihEgT6XQ",
+            token = accessToken,
             status = status,
             page = 0,
             size = 20

@@ -44,8 +44,7 @@ class MyRegisterViewModel(
         viewModelScope.launch {
             _uiState.value = MyReportsUiState.Loading // 로딩 상태 설정
 
-            val accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg0Mjk0OCwiZXhwIjoxNzYxODQ2NTQ4fQ.uu_IJCZNDBmc9r1nGWQJoNwZPxZQZvU3unyl-C0CuDHMbCVnCbSKFKKsLzURY__wk_NzFrpnQnQ0RTihEgT6XQ"
-            // val accessToken = token
+            val accessToken = token
 
             try {
                 // Repository를 통해 API 호출 (suspend 함수 가정)

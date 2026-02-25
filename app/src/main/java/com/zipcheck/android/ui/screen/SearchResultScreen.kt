@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.report.RiskAnlyRequest
@@ -69,11 +70,12 @@ import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
+import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.viewmodel.RiskViewModel
 
 @Composable
-fun SearchResultScreen(navController: NavHostController) {
+fun SearchResultScreen(navController: NavHostController, accessToken: String) {
     val context = LocalContext.current
 
     val riskService = remember {
@@ -116,7 +118,7 @@ fun SearchResultScreen(navController: NavHostController) {
         if (regionCode.isNotBlank()) {
             Log.d("SearchResultScreen", "🚀 analyze() 호출 시작")
             vm.analyze(
-                accessToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsInRva2VuVHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2MTg1NTkxOSwiZXhwIjoxNzYxODU5NTE5fQ.3b2FqPRRtBu1cDwUXYM5Hv2LHzR0zfARUbfyumymZjRVHUb3H8i9BvtlN8bylMJqqLwPZ_FbcZ7gMF0X8byyqQ",
+                accessToken = accessToken,
                 regionCode = regionCode,
                 req = RiskAnlyRequest(
                     deposit = deposit,
@@ -141,6 +143,13 @@ fun SearchResultScreen(navController: NavHostController) {
             CustomTopBar("분석 결과", navController, "main_screen")
         }
     ) { innerPadding ->
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(TopBar)
+        )
+
         when (val s = ui) {
             RiskUiState.Idle, RiskUiState.Loading -> {
                 // 로딩 화면
@@ -199,6 +208,7 @@ fun RiskLevelSection(
     strokeWidth: Dp,
     fontSize: Int,
     riskColor: Color,
+    txtColor: Color,
     riskScore: Double
 ) {
     // 원형 그래프와 텍스트를 겹쳐서 배치
@@ -213,17 +223,17 @@ fun RiskLevelSection(
         ) {
             // 원형 그래프 (Canvas)
             Canvas(modifier = Modifier.size(150.dp)) {
-                val strokeWidth = strokeWidth.toPx()
-                // 배경 원
+                val strokeWidth = (strokeWidth * 1.2f).toPx()
+
                 drawCircle(
                     color = CircleBGGray,
                     style = Stroke(width = strokeWidth)
                 )
-                // 88% 진행 원호
+
                 drawArc(
                     color = riskColor,
                     startAngle = -90f,
-                    sweepAngle = 360f * 0.88f,
+                    sweepAngle = 360f * (riskScore.toFloat() / 100),
                     useCenter = false,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
@@ -234,7 +244,7 @@ fun RiskLevelSection(
                 text = "${riskScore.toInt()}%",
                 fontSize = fontSize.sp,
                 fontWeight = FontWeight.Bold,
-                color = CircleRed
+                color = txtColor
             )
         }
     }

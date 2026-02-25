@@ -26,12 +26,17 @@ import com.zipcheck.android.ui.screen.ComparisonSection
 import com.zipcheck.android.ui.screen.PriorityRepaymentSection
 import com.zipcheck.android.ui.screen.RiskLevelSection
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.CircleGreen
+import com.zipcheck.android.ui.theme.CircleOrange
 import com.zipcheck.android.ui.theme.CircleRed
 import com.zipcheck.android.ui.theme.DarkBlack
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
+import com.zipcheck.android.ui.theme.TextGreen
+import com.zipcheck.android.ui.theme.TextOrange
+import com.zipcheck.android.ui.theme.TextRed
 
 @Composable
 fun SearchResultContent(
@@ -51,11 +56,15 @@ fun SearchResultContent(
     stddev: Double
 ) {
     val color = when (riskLevel.lowercase()) {
-        "critical" -> CircleRed
-        "high"     -> Color(0xFFFF7A00)
-        "medium"   -> Color(0xFFFFC107)
-        "low"      -> MainBlue
-        else       -> MainBlue
+        "Critical" -> CircleRed // 빨간색 (88%)
+        "Danger" -> CircleOrange // 주황색 (60%)
+        else -> CircleGreen // 기본/안전 (녹색)
+    }
+
+    val txtColor = when (riskLevel.lowercase()) {
+        "Critical" -> TextRed // 빨간색 (88%)
+        "Danger" -> TextOrange // 주황색 (60%)
+        else -> TextGreen // 기본/안전 (녹색)
     }
 
     Column(
@@ -81,12 +90,13 @@ fun SearchResultContent(
             Spacer(modifier = Modifier.height(24.dp)) // 두 줄 사이 간격
 
             // "아주 위험" 텍스트와 설명
+            Spacer(modifier = Modifier.height(32.dp))
             Text(
                 text = buildAnnotatedString {
                     append("해당 매물의 위험도는 ")
                     withStyle(
                         style = SpanStyle(
-                            color = CircleRed,
+                            color = txtColor,
                             fontWeight = FontWeight.Bold
                         )
                     ) {
@@ -100,11 +110,11 @@ fun SearchResultContent(
                     }
                     append(" 입니다")
                 },
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 color = Black
             )
 
-            Spacer(modifier = Modifier.height(2.dp)) // 두 줄 사이 간격
+            Spacer(modifier = Modifier.height(1.dp)) // 두 줄 사이 간격
 
             // 두 번째 줄: "동일 면적·거래가 매물 대비 보증금이 10% 높습니다."
             // 일부 텍스트에만 빨간색과 굵은 글씨체 적용
@@ -113,7 +123,7 @@ fun SearchResultContent(
                     append("동일 면적·거래가 매물 대비 보증금이 ")
                     withStyle(
                         style = SpanStyle(
-                            color = CircleRed,
+                            color = txtColor,
                             fontWeight = FontWeight.Bold
                         )
                     ) {
@@ -121,7 +131,7 @@ fun SearchResultContent(
                     }
                     append("% 높습니다")
                 },
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = DarkBlack
             )
 
@@ -133,6 +143,7 @@ fun SearchResultContent(
                 strokeWidth = 25.dp,
                 fontSize = 48,
                 riskColor = color,
+                txtColor = txtColor,
                 riskScore = riskScore
             )
 
