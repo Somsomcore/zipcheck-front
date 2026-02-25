@@ -12,10 +12,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class MyPageViewModel(
-    private val userInfoRepository: UserInfoRepository
+    private val userInfoRepository: UserInfoRepository,
+    private val accessToken: String
 ) : ViewModel() {
-
-    val accessToken = getAccessToken() ?: ""
 
     // 외부에서 관찰(observe) 가능한 UI 상태
     private val _uiState = MutableStateFlow<UserInfoUIState>(UserInfoUIState.Loading)
@@ -30,9 +29,6 @@ class MyPageViewModel(
         // 비동기 처리를 위해 Coroutine 사용
         viewModelScope.launch {
             _uiState.value = UserInfoUIState.Loading // 로딩 상태 설정
-
-            // NOTE: 실제 앱에서는 SharedPreferences나 다른 저장소에서 Access Token을 가져와야 합니다.
-            val accessToken = accessToken
 
             try {
                 // Repository를 통해 API 호출 (suspend 함수 가정)

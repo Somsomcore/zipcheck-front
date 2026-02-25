@@ -74,9 +74,7 @@ import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.viewmodel.RiskViewModel
 
 @Composable
-fun SearchResultScreen(navController: NavHostController) {
-    val accessToken = getAccessToken() ?: ""
-
+fun SearchResultScreen(navController: NavHostController, accessToken: String) {
     val context = LocalContext.current
 
     val riskService = remember {

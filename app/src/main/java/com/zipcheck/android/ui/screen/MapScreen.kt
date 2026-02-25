@@ -93,11 +93,9 @@ suspend fun geocodeAddress(address: String, kakao: KakaoLocalService): LatLng? {
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(navController: NavHostController) {
+fun MapScreen(navController: NavHostController, accessToken: String) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-
-    val token = getAccessToken() ?: ""
 
     // 1. MapView 인스턴스를 remember로 유지
     val mapView = remember {
@@ -308,7 +306,7 @@ fun MapScreen(navController: NavHostController) {
 
                                     scope.launch {
                                         try {
-                                            val reports = reportRepo.fetchReportsByAddress(token, addr, page = 0, size = 10)
+                                            val reports = reportRepo.fetchReportsByAddress(accessToken, addr, page = 0, size = 10)
                                             if (reports.size <= 1) {
                                                 detailItem = reports.firstOrNull()
                                                 showDetailSheet = detailItem != null

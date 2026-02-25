@@ -66,7 +66,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
-import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
 import com.zipcheck.android.data.model.report.toRiskAnalysisResult
@@ -89,6 +88,7 @@ import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListVMFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListViewModel
+import com.zipcheck.android.util.TokenManager
 import java.security.MessageDigest
 import java.time.LocalDate
 import kotlin.collections.map
@@ -121,8 +121,7 @@ class MainActivity : ComponentActivity() {
         } else {
             "main_screen"
         }
-
-        val accessToken = getAccessToken() ?: ""
+        val tokenManager = TokenManager(context = applicationContext)
 
         setContent {
             ZipcheckfrontTheme {
@@ -192,12 +191,13 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = true
                             }
-                            MainScreen(navController = navController)
+                            val accessToken = tokenManager.getAccessToken() ?: ""
+                            MainScreen(navController = navController, accessToken = accessToken)
                         }
 
                         composable("risk_analysis_record") {
                             LaunchedEffect(Unit) { showBottomBar.value = false }
-
+                            val accessToken = tokenManager.getAccessToken() ?: ""
                             val context = LocalContext.current
                             val reportService = remember { RetrofitObj.getRetrofit(context).create(ReportService::class.java) }
                             val repo = remember { RiskRepository(reportService) }
@@ -283,13 +283,15 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
-                            SearchResultScreen(navController = navController)
+                            val accessToken = tokenManager.getAccessToken() ?: ""
+                            SearchResultScreen(navController = navController, accessToken = accessToken)
                         }
                         composable("map") {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
-                            MapScreen(navController = navController)
+                            val accessToken = tokenManager.getAccessToken() ?: ""
+                            MapScreen(navController = navController, accessToken = accessToken)
                         }
                         composable("fraud_history") {
                             LaunchedEffect(Unit) {
@@ -362,7 +364,8 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(Unit) {
                                 showBottomBar.value = false
                             }
-                            MyPageScreen(navController = navController)
+                            val accessToken = tokenManager.getAccessToken() ?: ""
+                            MyPageScreen(navController = navController, accessToken = accessToken)
                         }
                         composable("my_register_screen") {
                             LaunchedEffect(Unit) {
@@ -376,6 +379,7 @@ class MainActivity : ComponentActivity() {
                             }
                             val repo = remember { ReportRepository(reportService) }
 
+                            val accessToken = tokenManager.getAccessToken() ?: ""
                             // 2) ViewModel 생성 (Factory 사용)
                             val myRegisterVm: MyRegisterViewModel = viewModel(
                                 key = "myRegisterVm", // 선택: 프로세스 재생성 시 구분용
@@ -391,7 +395,8 @@ class MainActivity : ComponentActivity() {
                             // 3) 화면 호출
                             MyRegisterScreen(
                                 navController = navController,
-                                viewModel = myRegisterVm
+                                viewModel = myRegisterVm,
+                                accessToken = accessToken
                             )
                         }
                     }
@@ -405,8 +410,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    modifier: Modifier = Modifier
-
+    modifier: Modifier = Modifier,
+    accessToken: String
 ) {
     val homeBGLinear0 = HomeBGLinear0
     val homeBGLinear1 = HomeBGLinear1
@@ -415,8 +420,6 @@ fun MainScreen(
 
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
-
-    val accessToken = getAccessToken() ?: ""
 
     Column(
         modifier = modifier

@@ -51,6 +51,7 @@ import com.zipcheck.android.data.api.AuthService
 import com.zipcheck.android.data.api.SocialLoginRequest
 import com.zipcheck.android.data.api.SocialLoginResponse
 import com.zipcheck.android.data.network.RetrofitObj
+import com.zipcheck.android.util.TokenManager
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Response
@@ -259,40 +260,26 @@ private fun handleKakaoLogin(
     navController: NavController
 ) {
     val request = SocialLoginRequest(provider = "KAKAO", accessToken = accessToken)
+    val tokenManager = TokenManager(context)
 
-    service.socialLogin(request)  // ✅ 헤더 파라미터 제거
-        .enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+    service.socialLogin(request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
         override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
-            if (!response.isSuccessful) {
-                Toast.makeText(context, "응답 오류", Toast.LENGTH_SHORT).show()
-                return
-            }
-            val body = response.body()
-            if (body?.isSuccess == true && body.result != null) {
-                val login = body.result
+            if (response.isSuccessful) {
+                val login = response.body()?.result
+                if (login != null) {
+                    // 2. 직접 수정 대신 TokenManager의 saveTokens 사용!
+                    tokenManager.saveTokens(login.accessToken, login.refreshToken)
 
-                // ✅ 서버 발급 토큰 저장 (이 토큰으로 인증 API 호출)
-                val shared = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-                with(shared.edit()) {
-                    putString("accessToken", login.accessToken)
-                    putString("refreshToken", login.refreshToken)
-                    apply()
-                }
+                    // (선택) 유저 정보 저장도 TokenManager 이용
+                    tokenManager.saveUserInfo(login.user.id, login.user.email ?: "", "", 0L)
 
-                val user = login.user
-                if (user.name.isNullOrBlank()) {
-                    navController.navigate("main_screen")
-                } else {
                     Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
                     navController.navigate("main_screen") {
-                        popUpTo("login") { inclusive = true }
+                        popUpTo("login_screen") { inclusive = true }
                     }
                 }
-            } else {
-                Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
             }
         }
-
         override fun onFailure(call: Call<SocialLoginResponse>, t: Throwable) {
             Toast.makeText(context, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
         }
@@ -306,37 +293,26 @@ private fun handleNaverLogin(
     navController: NavController
 ) {
     val request = SocialLoginRequest(provider = "NAVER", accessToken = accessToken)
-    service.socialLogin(request)  // ✅ 헤더 파라미터 제거
-        .enqueue(object : retrofit2.Callback<SocialLoginResponse> {
-        override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
-            if (!response.isSuccessful) {
-                showHttpDebugToast(context, response, "AUTH")
-                return
-            }
-            val body = response.body()
-            if (body?.isSuccess == true && body.result != null) {
-                val login = body.result
-                val shared = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-                with(shared.edit()) {
-                    putString("accessToken", login.accessToken)
-                    putString("refreshToken", login.refreshToken)
-                    apply()
-                }
+    val tokenManager = TokenManager(context)
 
-                val user = login.user
-                if (user.name.isNullOrBlank()) {
-                    navController.navigate("login_screen_name")
-                } else {
-                    Toast.makeText(context, "네이버 로그인 성공!", Toast.LENGTH_SHORT).show()
+    service.socialLogin(request).enqueue(object : retrofit2.Callback<SocialLoginResponse> {
+        override fun onResponse(call: Call<SocialLoginResponse>, response: Response<SocialLoginResponse>) {
+            if (response.isSuccessful) {
+                val login = response.body()?.result
+                if (login != null) {
+                    // 2. 직접 수정 대신 TokenManager의 saveTokens 사용!
+                    tokenManager.saveTokens(login.accessToken, login.refreshToken)
+
+                    // (선택) 유저 정보 저장도 TokenManager 이용
+                    tokenManager.saveUserInfo(login.user.id, login.user.email ?: "", "", 0L)
+
+                    Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
                     navController.navigate("main_screen") {
-                        popUpTo("login") { inclusive = true }
+                        popUpTo("login_screen") { inclusive = true }
                     }
                 }
-            } else {
-                Toast.makeText(context, "로그인 실패: ${body?.message}", Toast.LENGTH_SHORT).show()
             }
         }
-
         override fun onFailure(call: Call<SocialLoginResponse>, t: Throwable) {
             Toast.makeText(context, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
         }

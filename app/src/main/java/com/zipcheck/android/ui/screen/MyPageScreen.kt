@@ -53,14 +53,15 @@ data class SettingsItem(val title: String, val onClick: () -> Unit)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPageScreen(
-    navController : NavHostController
+    navController : NavHostController,
+    accessToken: String
 ) {
     val context = navController.context
     val scope = rememberCoroutineScope() // 비동기 작업을 위한 스코프
 
     // 로그아웃 함수 정의
     val onLogoutClick = {
-        val shared = context.getSharedPreferences("auth_prefs", android.content.Context.MODE_PRIVATE)
+        val shared = context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
         val accessToken = shared.getString("accessToken", "") ?: ""
 
         val authService = RetrofitObj.getRetrofit(context).create(AuthService::class.java)
@@ -88,7 +89,7 @@ fun MyPageScreen(
 
     val menuItems = listOf(
         SettingsItem(title = "내가 쓴 신고글", onClick = { navController.navigate("my_register_screen") }),
-        SettingsItem(title = "로그아웃", onClick = { onLogoutClick }),
+        SettingsItem(title = "로그아웃", onClick = onLogoutClick),
     )
 
     val repo = remember {
@@ -96,7 +97,7 @@ fun MyPageScreen(
             RetrofitObj.getRetrofit(navController.context).create(UserSevice::class.java)
         )
     }
-    val factory = remember { MyPageViewModelFactory(repo) }
+    val factory = remember { MyPageViewModelFactory(repo, accessToken) }
 
     val viewModel: MyPageViewModel = viewModel(factory = factory)
 
