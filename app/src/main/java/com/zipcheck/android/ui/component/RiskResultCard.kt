@@ -21,6 +21,9 @@ import com.zipcheck.android.ui.theme.BorderGray
 import com.zipcheck.android.ui.theme.CircleGreen
 import com.zipcheck.android.ui.theme.CircleOrange
 import com.zipcheck.android.ui.theme.CircleRed
+import com.zipcheck.android.ui.theme.TextGreen
+import com.zipcheck.android.ui.theme.TextOrange
+import com.zipcheck.android.ui.theme.TextRed
 
 @Composable
 fun RiskResultCard(
@@ -31,6 +34,12 @@ fun RiskResultCard(
         "Critical" -> CircleRed // 빨간색 (88%)
         "Danger" -> CircleOrange // 주황색 (60%)
         else -> CircleGreen // 기본/안전 (녹색)
+    }
+
+    val txtColor = when (result.riskLevel.lowercase()) {
+        "Critical" -> TextRed // 빨간색 (88%)
+        "Danger" -> TextOrange // 주황색 (60%)
+        else -> TextGreen // 기본/안전 (녹색)
     }
 
     Card(
@@ -57,6 +66,7 @@ fun RiskResultCard(
                 strokeWidth = 14.dp,
                 fontSize = 24,
                 riskColor = riskColor,
+                txtColor = txtColor,
                 riskScore = result.riskScore
             )
         }

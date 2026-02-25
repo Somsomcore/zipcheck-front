@@ -70,6 +70,7 @@ import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
+import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.viewmodel.RiskViewModel
 
@@ -142,6 +143,13 @@ fun SearchResultScreen(navController: NavHostController, accessToken: String) {
             CustomTopBar("분석 결과", navController, "main_screen")
         }
     ) { innerPadding ->
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(TopBar)
+        )
+
         when (val s = ui) {
             RiskUiState.Idle, RiskUiState.Loading -> {
                 // 로딩 화면
@@ -200,6 +208,7 @@ fun RiskLevelSection(
     strokeWidth: Dp,
     fontSize: Int,
     riskColor: Color,
+    txtColor: Color,
     riskScore: Double
 ) {
     // 원형 그래프와 텍스트를 겹쳐서 배치
@@ -214,17 +223,17 @@ fun RiskLevelSection(
         ) {
             // 원형 그래프 (Canvas)
             Canvas(modifier = Modifier.size(150.dp)) {
-                val strokeWidth = strokeWidth.toPx()
-                // 배경 원
+                val strokeWidth = (strokeWidth * 1.2f).toPx()
+
                 drawCircle(
                     color = CircleBGGray,
                     style = Stroke(width = strokeWidth)
                 )
-                // 88% 진행 원호
+
                 drawArc(
                     color = riskColor,
                     startAngle = -90f,
-                    sweepAngle = 360f * 0.88f,
+                    sweepAngle = 360f * (riskScore.toFloat() / 100),
                     useCenter = false,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
@@ -235,7 +244,7 @@ fun RiskLevelSection(
                 text = "${riskScore.toInt()}%",
                 fontSize = fontSize.sp,
                 fontWeight = FontWeight.Bold,
-                color = CircleRed
+                color = txtColor
             )
         }
     }

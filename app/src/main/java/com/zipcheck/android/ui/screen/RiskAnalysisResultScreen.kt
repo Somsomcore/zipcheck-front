@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,12 +26,18 @@ import androidx.navigation.NavHostController
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.CircleGreen
+import com.zipcheck.android.ui.theme.CircleOrange
 import com.zipcheck.android.ui.theme.CircleRed
 import com.zipcheck.android.ui.theme.DarkBlack
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
+import com.zipcheck.android.ui.theme.TextGreen
+import com.zipcheck.android.ui.theme.TextOrange
+import com.zipcheck.android.ui.theme.TextRed
+import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
 
 @Composable
@@ -42,11 +49,15 @@ fun RiskAnalysisResultScreen(
     val scrollState = rememberScrollState()
 
     val color = when (result.riskLevel.lowercase()) {
-        "critical" -> CircleRed
-        "high"     -> Color(0xFFFF7A00)
-        "medium"   -> Color(0xFFFFC107)
-        "low"      -> MainBlue
-        else       -> MainBlue
+        "Critical" -> CircleRed // 빨간색 (88%)
+        "Danger" -> CircleOrange // 주황색 (60%)
+        else -> CircleGreen // 기본/안전 (녹색)
+    }
+
+    val txtColor = when (result.riskLevel.lowercase()) {
+        "Critical" -> TextRed // 빨간색 (88%)
+        "Danger" -> TextOrange // 주황색 (60%)
+        else -> TextGreen // 기본/안전 (녹색)
     }
 
     Scaffold(
@@ -62,6 +73,14 @@ fun RiskAnalysisResultScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState),
         ) {
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(TopBar)
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
             Column(
                 modifier = Modifier
                     .padding(horizontal = 16.dp),
@@ -72,8 +91,8 @@ fun RiskAnalysisResultScreen(
                         append("해당 매물의 위험도는 ")
                         withStyle(
                             style = SpanStyle(
-                                color = CircleRed,
-                                fontWeight = FontWeight.Bold
+                                color = txtColor,
+                                fontWeight = FontWeight.Bold,
                             )
                         ) {
                             if (result.riskLevel == "Critical") {
@@ -86,11 +105,11 @@ fun RiskAnalysisResultScreen(
                         }
                         append(" 입니다")
                     },
-                    fontSize = 16.sp,
+                    fontSize = 20.sp,
                     color = Black
                 )
 
-                Spacer(modifier = Modifier.height(2.dp)) // 두 줄 사이 간격
+                Spacer(modifier = Modifier.height(1.dp)) // 두 줄 사이 간격
 
                 // 두 번째 줄: "동일 면적·거래가 매물 대비 보증금이 10% 높습니다."
                 // 일부 텍스트에만 빨간색과 굵은 글씨체 적용
@@ -99,15 +118,15 @@ fun RiskAnalysisResultScreen(
                         append("동일 면적·거래가 매물 대비 보증금이 ")
                         withStyle(
                             style = SpanStyle(
-                                color = CircleRed,
+                                color = txtColor,
                                 fontWeight = FontWeight.Bold
                             )
                         ) {
                             append(result.depositPct.toString())
                         }
-                        append(" 높습니다")
+                        append("% 높습니다")
                     },
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     color = DarkBlack
                 )
 
@@ -119,6 +138,7 @@ fun RiskAnalysisResultScreen(
                     strokeWidth = 25.dp,
                     fontSize = 48,
                     riskColor = color,
+                    txtColor = txtColor,
                     riskScore = result.riskScore
                 )
 

@@ -37,6 +37,10 @@ val CircleRed = Color(0xFFFF616D)
 val CircleOrange = Color(0xFFFFB37C)
 val CircleGreen = Color(0xFF3AC0A0)
 
+val TextRed = Color(0xFFED3241)
+val TextOrange = Color(0xFFE86339)
+val TextGreen = Color(0xFF298267)
+
 val RoadAddressLabelColor = Color(0xFFEAF2FF)
 val OldAddressLabelColor = Color(0xFFE3E5E8)
 val ErrorRed = Color(0xFFF44336)
