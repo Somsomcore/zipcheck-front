@@ -65,6 +65,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import com.google.gson.Gson
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
@@ -126,13 +128,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             ZipcheckfrontTheme {
                 val navController = rememberNavController()
-                val showBottomBar = rememberSaveable { mutableStateOf(true) }
+
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+
+                val showBottomBar = currentRoute in listOf("main_screen", "fraud_history")
 
                 Scaffold(
                     containerColor = White,   // 배경 흰색
                     contentColor = Color.Black,
                     bottomBar = {
-                        if (showBottomBar.value) {
+                        if (showBottomBar) {
                             BottomNavigationBar(navController = navController)
                         }
                     }
@@ -147,25 +153,16 @@ class MainActivity : ComponentActivity() {
                     ) {
                         //LoginScreen route
                         composable("login_screen") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             LoginScreen(navController = navController)
                         }
                         //LoginScreen_name route
                         composable("login_screen_name") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             NameInputScreen(navController = navController)
                         }
                         composable(
                             route = "login_screen_telecom/{name}",
                             arguments = listOf(navArgument("name") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             val name = backStackEntry.arguments?.getString("name")
                             if (name != null) {
                                 CarrierInputScreen(navController = navController, name = name)
@@ -188,15 +185,11 @@ class MainActivity : ComponentActivity() {
 
                         // MainScreen route
                         composable("main_screen") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = true
-                            }
                             val accessToken = tokenManager.getAccessToken() ?: ""
                             MainScreen(navController = navController, accessToken = accessToken)
                         }
 
                         composable("risk_analysis_record") {
-                            LaunchedEffect(Unit) { showBottomBar.value = false }
                             val accessToken = tokenManager.getAccessToken() ?: ""
                             val context = LocalContext.current
                             val reportService = remember { RetrofitObj.getRetrofit(context).create(ReportService::class.java) }
@@ -227,21 +220,14 @@ class MainActivity : ComponentActivity() {
                             val gson = Gson()
                             val result = gson.fromJson(jsonString, RiskAnalysisResult::class.java)
 
-                            LaunchedEffect(Unit) { showBottomBar.value = false }
                             RiskAnalysisResultScreen(navController = navController, result = result)
                         }
 
                         // Other screen routes
                         composable("search") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             SearchScreen(navController = navController)
                         }
                         composable("search_address") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             SearchAddressScreen(navController = navController)
                         }
                         composable(
@@ -264,9 +250,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         ) {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             SearchSecondScreen(navController = navController)
                         }
 
@@ -280,30 +263,23 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         ) {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             val accessToken = tokenManager.getAccessToken() ?: ""
                             SearchResultScreen(navController = navController, accessToken = accessToken)
                         }
                         composable("map") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             val accessToken = tokenManager.getAccessToken() ?: ""
                             MapScreen(navController = navController, accessToken = accessToken)
                         }
                         composable("fraud_history") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = true
-                            }
                             FraudHistoryScreen()
                         }
 
-
+                        navigation(
+                            startDestination = "register_screen_1", // 그룹 진입 시 처음 보여줄 화면
+                            route = "register_graph"                // 이 그룹의 전체 이름 (ViewModel 공유 시 사용)
+                        ) {
                             // 1) 등록 1단계: 주소 입력
                             composable("register_screen_1") { backStackEntry ->
-                                LaunchedEffect(Unit) { showBottomBar.value = false }
 
                                 // 부모 그래프 엔트리로부터 같은 ViewModel 공유
                                 val parentEntry = remember(backStackEntry) {
@@ -322,7 +298,6 @@ class MainActivity : ComponentActivity() {
                                     navArgument("detailAddress") { type = NavType.StringType }
                                 )
                             ) { backStackEntry ->
-                                LaunchedEffect(Unit) { showBottomBar.value = false }
 
                                 val parentEntry = remember(backStackEntry) {
                                     navController.getBackStackEntry("register_graph")
@@ -331,7 +306,8 @@ class MainActivity : ComponentActivity() {
 
                                 // 1단계에서 encode된 값을 여기서 decode
                                 val address = backStackEntry.arguments?.getString("address") ?: ""
-                                val detailAddress = backStackEntry.arguments?.getString("detailAddress") ?: ""
+                                val detailAddress =
+                                    backStackEntry.arguments?.getString("detailAddress") ?: ""
 
                                 RegisterScreen2(
                                     navController = navController,
@@ -341,7 +317,6 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable("register_screen_3") { backStackEntry ->
-                                LaunchedEffect(Unit) { showBottomBar.value = false }
 
                                 val parentEntry = remember(backStackEntry) {
                                     navController.getBackStackEntry("register_graph")
@@ -353,25 +328,17 @@ class MainActivity : ComponentActivity() {
                                     reportVm = reportVm
                                 )
                             }
-                            composable("register_screen_4") { backStackEntry ->
-                                LaunchedEffect(Unit) { showBottomBar.value = false } // 완료화면도 바텀 숨김 유지(원하면 true)
-
-                                // 완료 화면은 VM 필요 없음
-                                RegisterScreen4(navController = navController)
-                            }
+                        }
+                        composable("register_screen_4") { backStackEntry ->
+                            // 완료 화면은 VM 필요 없음
+                            RegisterScreen4(navController = navController)
+                        }
 
                         composable("my_page") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
                             val accessToken = tokenManager.getAccessToken() ?: ""
                             MyPageScreen(navController = navController, accessToken = accessToken)
                         }
                         composable("my_register_screen") {
-                            LaunchedEffect(Unit) {
-                                showBottomBar.value = false
-                            }
-
                             // 1) 네트워킹 준비
                             val context = LocalContext.current
                             val reportService = remember {
@@ -585,7 +552,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .clickable(onClick = { navController.navigate("register") }),
+                    .clickable(onClick = { navController.navigate("register_screen_1") }),
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             ) {

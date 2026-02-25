@@ -292,10 +292,10 @@ fun RegisterScreen3(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 200.dp, max = 200.dp),
-                        placeholder = { Text("내용내용내용내용...", color = PlaceholderGray) },
+                        placeholder = { Text("내용을 입력하세요.", color = PlaceholderGray) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MainBlue,
-                            unfocusedBorderColor = TextFieldBorderGray,
+                            unfocusedBorderColor = Black,
                             cursorColor = MainBlue,
                             focusedContainerColor = White,
                             unfocusedContainerColor = White

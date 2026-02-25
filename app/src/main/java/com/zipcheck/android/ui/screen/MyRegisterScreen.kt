@@ -32,9 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.MyReportTab
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
@@ -44,7 +48,10 @@ import com.zipcheck.android.ui.component.CustomTopBar
 import com.zipcheck.android.ui.component.mypage.MyReportCard
 import com.zipcheck.android.ui.state.MyReportsUiState
 import com.zipcheck.android.ui.theme.BGGray
+import com.zipcheck.android.ui.theme.Black
+import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
+import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
 import kotlinx.coroutines.flow.StateFlow
@@ -79,6 +86,13 @@ fun MyRegisterScreen(
             CustomTopBar("내가 쓴 신고글", navController, "my_page")
         }
     ) { innerPadding ->
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(TopBar)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -89,6 +103,7 @@ fun MyRegisterScreen(
                 selectedTabIndex = tab.ordinal,
                 containerColor = White,
                 contentColor = MainBlue,
+                divider = {},
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         modifier = Modifier
@@ -145,7 +160,9 @@ fun MyRegisterScreen(
                     Text(
                         text = "${list.size}건의 신고가 ${if (tab == MyReportTab.REGISTERED) "등록" else "접수"}되었어요",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF7C8594),
+                        color = Black,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
 

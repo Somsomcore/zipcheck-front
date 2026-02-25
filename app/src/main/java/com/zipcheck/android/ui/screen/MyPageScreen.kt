@@ -109,6 +109,13 @@ fun MyPageScreen(
             CustomTopBar("마이페이지", navController, "main_screen")
         }
     ) { innerPadding ->
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(TopBar)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
