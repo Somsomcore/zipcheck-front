@@ -1,6 +1,5 @@
 package com.zipcheck.android.ui.screen
 
-import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -55,7 +54,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
@@ -76,9 +74,9 @@ import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.ReportRepository
 import com.zipcheck.android.data.repo.RiskRepository
-import com.zipcheck.android.ui.component.BottomNavigationBar
-import com.zipcheck.android.ui.component.RiskAnalysisList
-import com.zipcheck.android.ui.component.SearchBarOverlay
+import com.zipcheck.android.ui.component.common.BottomNavigationBar
+import com.zipcheck.android.ui.component.risk.RiskAnalysisList
+import com.zipcheck.android.ui.component.risk.SearchBarOverlay
 import com.zipcheck.android.ui.component.home.TopReportsSection
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
@@ -187,6 +185,11 @@ class MainActivity : ComponentActivity() {
                         composable("main_screen") {
                             val accessToken = tokenManager.getAccessToken() ?: ""
                             MainScreen(navController = navController, accessToken = accessToken)
+                        }
+
+                        composable("alarm_screen") {
+                            val accessToken = tokenManager.getAccessToken() ?: ""
+                            AlarmScreen(navController = navController, accessToken = accessToken)
                         }
 
                         composable("risk_analysis_record") {
@@ -470,14 +473,15 @@ fun MainScreen(
                             .clickable(                            // 클릭 리플/배경 제거(원하면)
                                 interactionSource = interaction,
                                 indication = null
-                            ) { /* TODO: 알림 화면 이동 */ },
+                            ) { navController.navigate("alarm_screen") },
                         colors = CardDefaults.cardColors(
                             containerColor = Color.Transparent
                         )
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_noti),

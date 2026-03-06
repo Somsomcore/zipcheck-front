@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -37,12 +38,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.MapService
 import com.zipcheck.android.data.repo.AddressRepository
@@ -54,6 +57,7 @@ import com.zipcheck.android.ui.theme.LightBlack
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.OldAddressLabelColor
 import com.zipcheck.android.ui.theme.RoadAddressLabelColor
+import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import com.zipcheck.android.ui.viewmodel.AddressUiState
 import com.zipcheck.android.ui.viewmodel.SearchAddressViewModel
 
@@ -268,8 +272,10 @@ fun AddressResultItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp)
+            .padding(bottom = 12.dp)
             .clickable {
+                Log.d("AddressSelection", "클릭된 주소의 bCode: ${address.bCode}")
+
                 navController.previousBackStackEntry
                     ?.savedStateHandle
                     ?.set("selectedAddress", address.roadAddress)
@@ -350,5 +356,14 @@ fun AddressLabel(text: String, backgroundColor: Color, textColor: Color) {
             color = textColor,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SearchAddressScreenPreview() {
+    ZipcheckfrontTheme {
+        val navController = rememberNavController()
+        SearchAddressScreen(navController)
     }
 }

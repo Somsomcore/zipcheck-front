@@ -11,7 +11,7 @@ data class KakaoAddressDoc(
     @SerializedName("address_name") val addressName: String?,      // 전체 주소 (문자열)
     @SerializedName("address_type") val addressType: String?,      // REGION_ADDR / ROAD_ADDR 등
     val address: KakaoJibunAddress?,                               // 지번 주소
-    @SerializedName("road_address") val roadAddress: KakaoRoadAddress?, // 도로명 주소
+    @SerializedName("road_address_name") val roadAddress: String?, // 도로명 주소
     val x: String?,
     val y: String?
 )

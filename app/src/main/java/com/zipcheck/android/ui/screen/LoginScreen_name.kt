@@ -44,7 +44,7 @@ import androidx.navigation.compose.rememberNavController
 // import com.google.android.gms.common.api.Response // 이 임포트도 Retrofit의 Response와 충돌할 수 있으므로 제거
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.AuthService
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.data.api.VerificationCodeRequest
 import com.zipcheck.android.data.api.VerificationCodeResponse
 import com.zipcheck.android.data.api.VerifyCodeRequest

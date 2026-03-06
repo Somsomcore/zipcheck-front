@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,11 +34,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
-import com.zipcheck.android.ui.theme.Gray // 회색 대신 PlaceholderGray나 LightGray를 사용하면 좋지만, 기존 테마에 맞춰 Gray 사용
-import com.zipcheck.android.ui.theme.Grey90
 import com.zipcheck.android.ui.theme.White
 import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 

@@ -1,4 +1,4 @@
-package com.zipcheck.android.ui.component
+package com.zipcheck.android.ui.component.risk
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -25,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.zipcheck.android.R
 import com.zipcheck.android.data.model.report.MyRiskItem
-import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.theme.BorderGray
 import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.White
@@ -73,7 +73,7 @@ fun AddCard(onClick: () -> Unit) {
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(

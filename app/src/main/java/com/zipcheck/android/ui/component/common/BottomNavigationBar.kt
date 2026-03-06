@@ -1,4 +1,4 @@
-package com.zipcheck.android.ui.component
+package com.zipcheck.android.ui.component.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable

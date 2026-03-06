@@ -25,7 +25,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,7 +37,7 @@ import com.zipcheck.android.data.api.LogoutResult
 import com.zipcheck.android.data.api.UserSevice
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.UserInfoRepository
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.state.UserInfoUIState
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.DarkBlack

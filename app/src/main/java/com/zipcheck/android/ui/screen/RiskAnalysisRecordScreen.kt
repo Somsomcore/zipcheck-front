@@ -44,12 +44,11 @@ import com.google.gson.Gson
 import com.zipcheck.android.R
 import com.zipcheck.android.data.model.report.MyRiskItem
 import com.zipcheck.android.data.model.riskAnalysis.AnalysisGroup
-import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 //import com.zipcheck.android.data.model.riskAnalysis.groupedResults
-import com.zipcheck.android.ui.component.CustomTopBar
-import com.zipcheck.android.ui.component.MonthYearPicker
-import com.zipcheck.android.ui.component.RiskResultCard
-//import com.zipcheck.android.ui.component.RiskResultCard
+import com.zipcheck.android.ui.component.common.CustomTopBar
+import com.zipcheck.android.ui.component.common.MonthYearPicker
+import com.zipcheck.android.ui.component.risk.RiskResultCard
+//import com.zipcheck.android.ui.component.risk.RiskResultCard
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.ExampleTextGray

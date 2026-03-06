@@ -1,4 +1,4 @@
-package com.zipcheck.android.ui.component
+package com.zipcheck.android.ui.component.risk
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

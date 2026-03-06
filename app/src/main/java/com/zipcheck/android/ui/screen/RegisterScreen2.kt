@@ -2,14 +2,9 @@ package com.zipcheck.android.ui.screen
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.FlingBehavior
-import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,8 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -57,39 +47,27 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.google.gson.Gson
 import com.zipcheck.android.R
 import com.zipcheck.android.data.model.report.RegisterMappings
 import com.zipcheck.android.data.model.report.ReportViewModel
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.TextFieldBorderGray
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.White
-import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.time.LocalDate
-import java.time.Year
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.io.path.name
 
 // 재사용 가능한 클릭 가능한 입력 필드 (Text + Dropdown/Calendar Icon)
 @Composable
@@ -194,12 +172,13 @@ fun TypeSelectorBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
             containerColor = White,
+            dragHandle = null,
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(bottom = 32.dp),
+                    .padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -221,17 +200,13 @@ fun TypeSelectorBottomSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        // 상단 패딩용 빈 아이템
-                        items(halfVisibleItems) {
-                            Spacer(modifier = Modifier.height(itemHeight))
-                        }
-
                         items(options) { option ->
                             val isSelected = (option == selectedItem)
                             val textColor by animateColorAsState(
                                 targetValue = if (isSelected) Black else PlaceholderGray, label = ""
                             )
-                            val textFontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            val textFontWeight =
+                                if (isSelected) FontWeight.Bold else FontWeight.Normal
 
                             Box(
                                 modifier = Modifier
@@ -241,7 +216,11 @@ fun TypeSelectorBottomSheet(
                                         selectedItem = option
                                         val index = options.indexOf(option)
                                         coroutineScope.launch {
-                                            listState.animateScrollToItem(index.minus(halfVisibleItems).coerceAtLeast(0))
+                                            listState.animateScrollToItem(
+                                                index.minus(
+                                                    halfVisibleItems
+                                                ).coerceAtLeast(0)
+                                            )
                                         }
                                     },
                                 contentAlignment = Alignment.Center
@@ -253,11 +232,6 @@ fun TypeSelectorBottomSheet(
                                     color = textColor
                                 )
                             }
-                        }
-
-                        // 하단 패딩용 빈 아이템
-                        items(halfVisibleItems) {
-                            Spacer(modifier = Modifier.height(itemHeight))
                         }
                     }
                 }
@@ -366,12 +340,13 @@ fun DatePickerBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
             containerColor = White,
+            dragHandle = null,
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp, bottom = 32.dp),
+                    .padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 년/월/일 휠 피커 UI
@@ -600,8 +575,26 @@ fun RegisterScreen2(
     var showContractDateSheet by remember { mutableStateOf(false) }
     var showRecognitionDateSheet by remember { mutableStateOf(false) }
 
-    val classificationOptions = listOf("아파트/다세대", "빌라", "투룸+", "원룸", "오피스텔", "상가")
-    val contractTypeOptions = listOf("전세", "월세", "매매", "단기임대")
+    val classificationOptions = listOf(
+        "깡통전세",
+        "전세 보증금 부풀림(시세 조작)",
+        "불량 임대사업자 명의 이전",
+        "건물 전체 전세 사기 ",
+        "근저당 선순위 설정 사기",
+        "전월세 이중계약",
+        "동일 물건 이중~삼중 계약",
+        "신탁사 소유 물건 사기",
+        "전세 대출 사기",
+        "일반적인/기타 사기",
+        "해당 유형 없음"
+    )
+    val contractTypeOptions = listOf(
+        "아파트",
+        "연립다세대",
+        "단독",
+        "다가구",
+        "오피스텔"
+    )
     val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.KOREA) }
 
     // 진입 시 주소 동기화 (Unresolved reference 방지용 실제 메서드에 맞춰 호출)
@@ -694,58 +687,6 @@ fun RegisterScreen2(
             }
         }
     }
-
-    // 사기 분류
-    TypeSelectorBottomSheet(
-        isVisible = showFraudTypeSheet,
-        onDismissRequest = { showFraudTypeSheet = false },
-        title = "사기 분류",
-        options = classificationOptions,
-        onSelect = { label ->
-            fraudType = label
-            RegisterMappings.classificationCode(label)?.let { code ->
-                reportVm.setClassification(code)   // Int 코드 저장
-            }
-        },
-        initialSelection = fraudType
-    )
-
-    // 계약 형태
-    TypeSelectorBottomSheet(
-        isVisible = showContractTypeSheet,
-        onDismissRequest = { showContractTypeSheet = false },
-        title = "계약 형태",
-        options = contractTypeOptions,
-        onSelect = { label ->
-            contractType = label
-            RegisterMappings.contractTypeCode(label)?.let { code ->
-                reportVm.setContractType(code)     // Int 코드 저장
-            }
-        },
-        initialSelection = contractType
-    )
-
-    // 계약 일자
-    DatePickerBottomSheet(
-        isVisible = showContractDateSheet,
-        onDismissRequest = { showContractDateSheet = false },
-        onDateSelected = { date ->
-            contractDate = date
-            reportVm.setContractAt(date)           // LocalDate 저장
-        },
-        initialDate = contractDate
-    )
-
-    // 인지 일자(선택)
-    DatePickerBottomSheet(
-        isVisible = showRecognitionDateSheet,
-        onDismissRequest = { showRecognitionDateSheet = false },
-        onDateSelected = { date ->
-            recognitionDate = date
-            reportVm.setRecognizedAt(date)         // LocalDate 저장
-        },
-        initialDate = recognitionDate
-    )
 
     // 사기 분류
     TypeSelectorBottomSheet(

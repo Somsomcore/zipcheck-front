@@ -31,30 +31,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.mypage.MyReportTab
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
-import com.zipcheck.android.data.network.RetrofitObj
-import com.zipcheck.android.data.repo.ReportRepository
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.component.mypage.MyReportCard
 import com.zipcheck.android.ui.state.MyReportsUiState
 import com.zipcheck.android.ui.theme.BGGray
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
-import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
-import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
-import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -56,12 +56,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.zipcheck.android.R
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
@@ -88,28 +87,44 @@ fun SearchScreen(navController: NavHostController) {
     val allFieldsFilled = address.isNotEmpty() && detailAddress.isNotEmpty() && deposit.isNotEmpty() && houseType.isNotEmpty() && area.isNotEmpty() && regionCode.isNotEmpty()
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.getLiveData<String>("selectedAddress")
-            ?.observe(lifecycleOwner) { result ->
-                address = result
-            }
+//    LaunchedEffect(lifecycleOwner) {
+//        navController.currentBackStackEntry
+//            ?.savedStateHandle
+//            ?.getLiveData<String>("selectedAddress")
+//            ?.observe(lifecycleOwner) { result ->
+//                address = result
+//            }
+//
+//        navController.currentBackStackEntry
+//            ?.savedStateHandle
+//            ?.getLiveData<String>("selectedRegionCode")
+//            ?.observe(lifecycleOwner) { code ->
+//                regionCode = code
+//
+//                // ✅ 로그 추가
+//                Log.d("SearchScreen", "📍 선택된 regionCode = $regionCode")
+//                if (regionCode.isNullOrBlank()) {
+//                    Log.e("SearchScreen", "❌ regionCode가 비어 있습니다! 주소 선택 확인 필요.")
+//                } else {
+//                    Log.d("SearchScreen", "✅ regionCode 정상 수신됨: $regionCode")
+//                }
+//            }
+//    }
+    LaunchedEffect(navController.currentBackStackEntry) {
+        val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
 
-        navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.getLiveData<String>("selectedRegionCode")
-            ?.observe(lifecycleOwner) { code ->
+        // 주소 관찰
+        savedStateHandle?.getLiveData<String>("selectedAddress")?.observe(lifecycleOwner) { result ->
+            address = result
+        }
+
+        // 지역 코드 관찰
+        savedStateHandle?.getLiveData<String>("selectedRegionCode")?.observe(lifecycleOwner) { code ->
+            if (code != null) {
                 regionCode = code
-
-                // ✅ 로그 추가
-                Log.d("SearchScreen", "📍 선택된 regionCode = $regionCode")
-                if (regionCode.isNullOrBlank()) {
-                    Log.e("SearchScreen", "❌ regionCode가 비어 있습니다! 주소 선택 확인 필요.")
-                } else {
-                    Log.d("SearchScreen", "✅ regionCode 정상 수신됨: $regionCode")
-                }
+                Log.d("SearchScreen", "✅ regionCode 수신 성공: $regionCode")
             }
+        }
     }
 
     // ModalBottomSheet를 위한 상태 변수들
@@ -331,19 +346,21 @@ fun SearchScreen(navController: NavHostController) {
 
                         navController.navigate("search_second?form=$encoded")
                     } },
+                enabled = allFieldsFilled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (allFieldsFilled) MainBlue else Gray,
-                    disabledContainerColor = Gray
+                    containerColor = MainBlue,
+                    disabledContainerColor = Gray, // 비활성화 시 색상
+                    contentColor = White,
+                    disabledContentColor = Black
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = "다음",
-                    color = if (allFieldsFilled) White else Black,
                     fontSize = 18.sp
                 )
             }

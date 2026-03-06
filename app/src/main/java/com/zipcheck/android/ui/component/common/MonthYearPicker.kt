@@ -1,4 +1,4 @@
-package com.zipcheck.android.ui.component
+package com.zipcheck.android.ui.component.common
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -136,7 +137,7 @@ fun WheelPicker(
 ) {
     val visibleItemCount = 5
     val itemHeight = 40.dp
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = initialIndex - floor(visibleItemCount / 2.0).toInt())
+    val lazyListState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex - floor(visibleItemCount / 2.0).toInt())
 
     // 스크롤이 멈췄을 때 중앙 아이템 선택
     LaunchedEffect(lazyListState.isScrollInProgress) {

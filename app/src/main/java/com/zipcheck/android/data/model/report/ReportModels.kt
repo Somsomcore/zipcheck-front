@@ -15,11 +15,10 @@ data class Report(
 )
 
 data class ReportPage(
-    val reports: List<Report>,
-    val totalPages: Int,
-    val currentPage: Int,
-    val totalElements: Int,
-    val isLast: Boolean
+    val memberId: Int,
+    val reportId: Int,
+    val registrationStatus: String,
+    val createdAt: String
 )
 
 data class ReportForm(

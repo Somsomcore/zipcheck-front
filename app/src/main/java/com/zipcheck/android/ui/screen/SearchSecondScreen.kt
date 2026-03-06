@@ -4,7 +4,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,14 +11,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -37,17 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.zipcheck.android.R
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.TextFieldBorderGray
@@ -210,16 +204,12 @@ fun SearchSecondScreen(
 
             Spacer(modifier = Modifier.padding(16.dp))
 
-            ClickableTextField(
+            SearchTextField(
                 label = "건축 년도",
-                value = houseYear, // 선택된 값을 표시
-                placeholderText = "",
-                leadingIcon = null,
-                onClick = {
-                    focusManager.clearFocus()
-                    showBottomSheet = true // 클릭 시 바텀 시트 표시
-                },
-                trailingIcon = { Text(text = "년", color = Color.Gray) }
+                value = houseYear,
+                onValueChange = { houseYear = it },
+                trailingIcon = { Text(text = "년", color = Color.Gray) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             // ✅ 하단 버튼을 위로 밀어내는 Spacer

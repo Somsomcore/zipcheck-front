@@ -1,4 +1,4 @@
-package com.zipcheck.android.ui.component
+package com.zipcheck.android.ui.component.risk
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.zipcheck.android.data.model.report.MyRiskItem
-import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
 import com.zipcheck.android.ui.screen.RiskLevelSection
 import com.zipcheck.android.ui.theme.BorderGray
 import com.zipcheck.android.ui.theme.CircleGreen

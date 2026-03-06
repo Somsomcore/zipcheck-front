@@ -5,10 +5,6 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.copy
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,12 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -41,12 +35,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -57,32 +48,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.zipcheck.android.R
 import com.zipcheck.android.data.model.report.ReportViewModel
 import com.zipcheck.android.data.model.report.SubmitState
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.TextFieldBorderGray
 import com.zipcheck.android.ui.theme.White
-import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
 
 
 // 재사용 가능한 클릭 가능한 입력 필드 (Text + Icon)
@@ -380,24 +360,30 @@ fun RegisterScreen3(
             // 완료 버튼
             Button(
                 onClick = {
-                    navController.navigate("register_screen_4") {
-                        launchSingleTop = true }},
+                    // ViewModel에 구현된 제출 함수 호출
+                    // (함수명은 ViewModel 정의에 따라 submit() 또는 submitReport() 등으로 확인 필요)
+                    reportVm.submit()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
                     .padding(bottom = 16.dp),
-                enabled = isComplete,
+                enabled = isComplete && submitState !is SubmitState.Loading, // 제출 중에는 비활성화
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isComplete) MainBlue else Gray,
                     disabledContainerColor = Gray
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "완료",
-                    color = if (isComplete) White else Black,
-                    fontSize = 18.sp
-                )
+                if (submitState is SubmitState.Loading) {
+                    CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        text = "완료",
+                        color = if (isComplete) White else Black,
+                        fontSize = 18.sp
+                    )
+                }
             }
         }
     }

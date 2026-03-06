@@ -10,13 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
@@ -24,14 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.zipcheck.android.data.model.riskAnalysis.RiskAnalysisResult
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.CircleGreen
 import com.zipcheck.android.ui.theme.CircleOrange
 import com.zipcheck.android.ui.theme.CircleRed
 import com.zipcheck.android.ui.theme.DarkBlack
-import com.zipcheck.android.ui.theme.Gray
-import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
 import com.zipcheck.android.ui.theme.TextGreen
@@ -92,19 +90,21 @@ fun RiskAnalysisResultScreen(
                         withStyle(
                             style = SpanStyle(
                                 color = txtColor,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 20.sp,
                             )
                         ) {
                             if (result.riskLevel == "Critical") {
                                 append("매우 위험")
                             } else if (result.riskLevel == "Danger"){
-                                append("위험")
-                            } else {
                                 append("주의")
+                            } else {
+                                append("보통")
                             }
                         }
                         append(" 입니다")
                     },
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp,
                     color = Black
                 )
@@ -124,7 +124,14 @@ fun RiskAnalysisResultScreen(
                         ) {
                             append(result.depositPct.toString())
                         }
-                        append("% 높습니다")
+
+                        if (result.riskLevel == "Critical") {
+                            append("% 높습니다")
+                        } else if (result.riskLevel == "Danger") {
+                            append("% 높습니다")
+                        } else {
+                            append("% 낮습니다")
+                        }
                     },
                     fontSize = 16.sp,
                     color = DarkBlack
@@ -165,13 +172,14 @@ fun RiskAnalysisResultScreen(
                 // "어떤 기준으로 전세 사기를 진단했나요?" 섹션
                 Text(
                     text = "Q. 어떤 기준으로 \n\t전세 사기를 진단했나요?",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
                 // 동면적/동거래 매물 대비 섹션
                 ComparisonSection(
+                    riskLevel = result.riskLevel,
                     depositPct = result.depositPct,
                     avg = result.average,
                     min = result.minimum,
@@ -183,10 +191,17 @@ fun RiskAnalysisResultScreen(
 
                 Text(
                     text = "*본 플랫폼은 전세사기 예방을 위한 정보 제공만을 목적으로 하며, 법적 책임을 부담하지 않습니다. \n" +
-                            " 계약 체결 전에는 반드시 전문가의 확인을 권장하며, 정보 이용에 따른 모든 책임은 이용자 본인에게 있습니다.",
+                            "계약 체결 전에는 반드시 전문가의 확인을 권장하며, 정보 이용에 따른 모든 책임은 이용자 본인에게 있습니다.",
                     fontSize = 8.sp,
-                    color = PlaceholderGray
+                    color = PlaceholderGray,
+                    style = TextStyle(
+                        lineHeight = 12.sp,
+                        platformStyle = PlatformTextStyle(
+                            includeFontPadding = false
+                        )
+                    )
                 )
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }

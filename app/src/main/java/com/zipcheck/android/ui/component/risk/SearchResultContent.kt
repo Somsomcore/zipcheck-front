@@ -15,7 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
@@ -97,15 +99,15 @@ fun SearchResultContent(
                     withStyle(
                         style = SpanStyle(
                             color = txtColor,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold,
                         )
                     ) {
                         if (riskLevel == "Critical") {
                             append("매우 위험")
                         } else if (riskLevel == "Danger"){
-                            append("위험")
-                        } else {
                             append("주의")
+                        } else {
+                            append("보통")
                         }
                     }
                     append(" 입니다")
@@ -129,7 +131,13 @@ fun SearchResultContent(
                     ) {
                         append(depositPct.toString())
                     }
-                    append("% 높습니다")
+                    if (riskLevel == "Critical") {
+                        append("% 높습니다")
+                    } else if (riskLevel == "Danger") {
+                        append("% 높습니다")
+                    } else {
+                        append("% 낮습니다")
+                    }
                 },
                 fontSize = 16.sp,
                 color = DarkBlack
@@ -177,6 +185,7 @@ fun SearchResultContent(
 
             // 동면적/동거래 매물 대비 섹션
             ComparisonSection(
+                riskLevel = riskLevel,
                 depositPct = depositPct,
                 avg = avg,
                 min = min,
@@ -188,10 +197,17 @@ fun SearchResultContent(
 
             Text(
                 text = "*본 플랫폼은 전세사기 예방을 위한 정보 제공만을 목적으로 하며, 법적 책임을 부담하지 않습니다. \n" +
-                        " 계약 체결 전에는 반드시 전문가의 확인을 권장하며, 정보 이용에 따른 모든 책임은 이용자 본인에게 있습니다.",
+                        "계약 체결 전에는 반드시 전문가의 확인을 권장하며, 정보 이용에 따른 모든 책임은 이용자 본인에게 있습니다.",
                 fontSize = 8.sp,
-                color = PlaceholderGray
+                color = PlaceholderGray,
+                style = TextStyle(
+                    lineHeight = 12.sp,
+                    platformStyle = PlatformTextStyle(
+                        includeFontPadding = false
+                    )
+                )
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

@@ -3,7 +3,6 @@ package com.zipcheck.android.ui.screen
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,13 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,10 +38,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,27 +47,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.navercorp.nid.NaverIdLoginSDK.getAccessToken
 import com.zipcheck.android.R
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.report.RiskAnlyRequest
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.data.repo.RiskRepository
-import com.zipcheck.android.ui.component.CustomTopBar
+import com.zipcheck.android.ui.component.common.CustomTopBar
 import com.zipcheck.android.ui.component.risk.SearchResultContent
 import com.zipcheck.android.ui.state.RiskUiState
 import com.zipcheck.android.ui.theme.Black
 import com.zipcheck.android.ui.theme.CircleBGGray
-import com.zipcheck.android.ui.theme.CircleRed
-import com.zipcheck.android.ui.theme.DarkBlack
-import com.zipcheck.android.ui.theme.Gray
 import com.zipcheck.android.ui.theme.MainBlue
 import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.SectionGray
+import com.zipcheck.android.ui.theme.TextGreen
+import com.zipcheck.android.ui.theme.TextOrange
+import com.zipcheck.android.ui.theme.TextRed
 import com.zipcheck.android.ui.theme.TopBar
 import com.zipcheck.android.ui.theme.White
+import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import com.zipcheck.android.ui.viewmodel.RiskViewModel
 
 @Composable
@@ -255,58 +252,117 @@ fun PriorityRepaymentSection(
     maxPra: Double,
     pra: Double
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(color = SectionGray)
-            .padding(horizontal = 16.dp, vertical = 24.dp)
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF5F5F5), // 연회색 배경
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = "최우선변제금액", fontSize = 16.sp, color = PlaceholderGray)
-            Text(text = "${(maxPra / 10000).toInt()}만원", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = "최우선변제액", fontSize = 16.sp, color = PlaceholderGray)
-            Text(text = "${(pra / 10000).toInt()}만원", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(16.dp)) {
+            ComparisonRow("최우선변제금액", "${(maxPra / 10000).toInt()}만원")
+            ComparisonRow("최우선변제액", "${(pra / 10000).toInt()}만원")
         }
     }
 }
 
 @Composable
 fun ComparisonSection(
+    riskLevel: String,
     depositPct: Double,
     avg: Double,
     min: Double,
     max: Double,
     stddev: Double
 ) {
-    ComparisonItem(
-        icon = painterResource(id = R.drawable.ic_area), // 적절한 아이콘으로 변경
-        title = "동면적 매물 대비",
-        description = "동면적 매물들의 보증금은 xxx만원, xxx는 xxxx입니다. 현재 매물과 비교해 x% 낮습니다."
-    )
-    Spacer(modifier = Modifier.height(16.dp))
-    ComparisonItem(
-        icon = painterResource(id = R.drawable.ic_money), // 적절한 아이콘으로 변경
-        title = "동거래가 매물 대비",
-        description = "동거래가 매물들의 보증금은 xxx만원, xxx는 xxxx입니다. 현재 매물과 비교해 x% 낮습니다."
-    )
-    Spacer(modifier = Modifier.height(16.dp))
-    ComparisonItem(
-        icon = painterResource(id = R.drawable.ic_criteria_result), // 적절한 아이콘으로 변경
-        title = "종합 분석 결과",
-        description = "주의 동면적, 동거래가 매물 대비 평균은 ${avg}원,\n" +
-                "중앙값은 ${stddev}원, 최저가는 ${min}원, 최고가는 ${max}원입니다.\n"
-    )
-    Spacer(modifier = Modifier.height(16.dp))
+    val analysisTexts = getAnalysisTexts(riskLevel, min, max, stddev)
+
+    Column {
+        // 1. 유사 매물 보증금 리스트 섹션
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_area), // 돋보기 아이콘
+                contentDescription = null,
+                tint = MainBlue,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("유사 매물 보증금", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 회색 박스 영역
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFF5F5F5), // 연회색 배경
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                ComparisonRow("평균", "${(avg / 10000).toInt()}만원")
+                ComparisonRow("최저가", "${(min / 10000).toInt()}만원")
+                ComparisonRow("최고가", "${(max / 10000).toInt()}만원")
+                ComparisonRow("표준편차", "${(stddev).toInt()}")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // 2. 종합 분석 결과 섹션
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_criteria_result), // 리포트 아이콘
+                contentDescription = null,
+                tint = MainBlue,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("종합 분석 결과", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 분석 결과 텍스트 카드
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFF5F5F5),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                analysisTexts.forEachIndexed { index, item ->
+                    Column {
+                        Text(
+                            text = item.title,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Black
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = item.description,
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            lineHeight = 18.sp
+                        )
+                    }
+                    if (index < analysisTexts.size - 1) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ComparisonRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, color = Color.DarkGray, fontSize = 14.sp)
+        Text(text = value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    }
 }
 
 @Composable
@@ -350,5 +406,38 @@ fun ComparisonItem(icon: Painter, title: String, description: String) {
                 lineHeight = 20.sp
             )
         }
+    }
+}
+
+data class RiskAnalysisText(
+    val title: String,
+    val description: String,
+    val color: Color
+)
+
+@Composable
+fun getAnalysisTexts(riskLevel: String, min: Double, max: Double, stddev: Double): List<RiskAnalysisText> {
+    return when (riskLevel.lowercase()) {
+        "critical" -> listOf(
+            RiskAnalysisText("주변 매물 간 가격 차이가 ${stddev}원으로 큽니다.", "시세 조작이나 가짜 매물일 가능성이 높으니 전문가 확인 전에는 가계약을 자제하세요.", TextRed),
+            RiskAnalysisText("주변 최고가(${max}원)를 초과한 이례적인 가격입니다.", "보증금 미반환 사고 발생 확률이 매우 높은 가격대이므로 계약에 극도로 주의가 필요합니다.", TextRed)
+        )
+        "danger" -> listOf(
+            RiskAnalysisText("주변 시세가 완만하게 형성되어 있습니다.", "급격한 시세 변동 여부나 최근 해당 법정동의 실거래가 추이를 추가로 확인하세요.", TextOrange),
+            RiskAnalysisText("시세 범위 내에 있으나 주의가 필요합니다.", "입지나 시설 조건 대비 보증금이 과하게 책정된 것은 아닌지 신중히 비교하세요.", TextOrange)
+        )
+        else -> listOf( // 보통/안전
+            RiskAnalysisText("매물 간 가격 차이가 적어 시세가 안정적입니다.", "정상적인 시장 가격으로 판단되나, 실제 매물 상태를 현장에서 한 번 더 확인하세요.", TextGreen),
+            RiskAnalysisText("주변 시세 범위(${min}원~${max}원) 내 적정 수준입니다.", "보증금이 적정하나, 근저당 설정 여부 등 등기부상 권리관계를 함께 확인하세요.", TextGreen)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SearchResultScreenPreview() {
+    ZipcheckfrontTheme {
+        val navController = rememberNavController()
+        SearchResultScreen(navController, accessToken = "")
     }
 }

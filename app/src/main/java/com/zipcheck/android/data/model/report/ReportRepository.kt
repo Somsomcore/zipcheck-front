@@ -41,25 +41,23 @@ class ReportRepository(
         content: String,
         contractAtEpochDay: Long,
         recognizedAtEpochDay: Long,
-        evidencePdf: Uri?,
-        page: Int = 0,
-        size: Int = 10
+        evidencePdf: Uri?
     ): ReportPage {
         val contractAt = java.time.LocalDate.ofEpochDay(contractAtEpochDay).format(dateFmt)
         val recognizedAt = java.time.LocalDate.ofEpochDay(recognizedAtEpochDay).format(dateFmt)
-        val pdfPart = uriToPdfPart("evidencePdf", evidencePdf)
+        val pdfPart = uriToPdfPart("file", evidencePdf)
 
         val resp = api.submitReport(
-            addr = addr.asBody(),
-            addrDetail = addrDetail.ifBlank { "" }.asBody(),
-            classification = classification.toString().asBody(),
-            contractType = contractType.toString().asBody(),
-            content = content.asBody(),
-            contractAt = contractAt.asBody(),
-            recognizedAt = recognizedAt.asBody(),
-            evidencePdf = pdfPart,
-            page = page,
-            size = size
+            ReportRequest(
+                addr = addr,
+                addrDetail = addrDetail.ifBlank { "" },
+                classification = classification,
+                contractType = contractType,
+                contractedAt = contractAt,
+                recognitionAt = recognizedAt,
+                content = content
+            ),
+            file = pdfPart
         )
         require(resp.isSuccess && resp.result != null) { resp.message ?: "신고 접수 실패" }
         return resp.result!!.toModel()

@@ -12,9 +12,8 @@ fun ReportItemDto.toModel() = Report(
 )
 
 fun ReportPageDto.toModel() = ReportPage(
-    reports = reports.map { it.toModel() },
-    totalPages = totalPages,
-    currentPage = currentPage,
-    totalElements = totalElements,
-    isLast = isLast
+    memberId = memberId,
+    reportId = reportId,
+    registrationStatus = registrationStatus,
+    createdAt = createdAt
 )

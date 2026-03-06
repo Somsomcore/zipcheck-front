@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.zipcheck.android.data.network.RetrofitObj
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -23,12 +24,7 @@ class ReportViewModel(app: Application) : AndroidViewModel(app) {
 
     // 간단한 Retrofit 빌드(프로젝트 기존 클라이언트가 있으면 그걸 주입)
     private val api: ReportApi by lazy {
-        Retrofit.Builder()
-            .baseUrl("https://YOUR.BASE.URL/") // TODO: 교체
-            .client(OkHttpClient())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ReportApi::class.java)
+        RetrofitObj.getRetrofit(app.applicationContext).create(ReportApi::class.java)
     }
     private val repo = ReportRepository(api, app.applicationContext)
 
@@ -53,7 +49,7 @@ class ReportViewModel(app: Application) : AndroidViewModel(app) {
         // + SearchFirstScreen에서 요구하는 추가 항목이 있다면 여기에 조건 추가
     }
 
-    fun submit(page: Int = 0, size: Int = 10) {
+    fun submit() {
         val f = _form.value
         val missing = when {
             f.addr.isBlank() -> "주소"
@@ -65,7 +61,7 @@ class ReportViewModel(app: Application) : AndroidViewModel(app) {
             else -> null
         }
         if (missing != null) {
-            _submitState.value = SubmitState.Error("$missing 를 입력해주세요.")
+            _submitState.value = SubmitState.Error("${missing}를 입력해주세요.")
             return
         }
 
@@ -80,9 +76,7 @@ class ReportViewModel(app: Application) : AndroidViewModel(app) {
                     content = f.content,
                     contractAtEpochDay = f.contractAt!!.toEpochDay(),
                     recognizedAtEpochDay = f.recognizedAt!!.toEpochDay(),
-                    evidencePdf = f.evidencePdf,
-                    page = page,
-                    size = size
+                    evidencePdf = f.evidencePdf
                 )
             }.onSuccess { pageData ->
                 _submitState.value = SubmitState.Success(pageData)
