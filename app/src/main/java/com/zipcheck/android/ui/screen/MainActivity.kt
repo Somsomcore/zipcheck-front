@@ -1,5 +1,9 @@
 package com.zipcheck.android.ui.screen
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -45,6 +49,8 @@ import com.zipcheck.android.ui.theme.ZipcheckfrontTheme
 import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -62,11 +68,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import com.google.gson.Gson
 import com.zipcheck.android.data.api.ReportService
+import com.zipcheck.android.data.model.alarm.AlarmDTO
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
 import com.zipcheck.android.data.model.report.toRiskAnalysisResult
 import com.zipcheck.android.data.model.report.ReportViewModel
@@ -84,6 +95,7 @@ import com.zipcheck.android.ui.theme.ExampleTextGray
 import com.zipcheck.android.ui.theme.HomeBG
 import com.zipcheck.android.ui.theme.HomeBGLinear0
 import com.zipcheck.android.ui.theme.HomeBGLinear1
+import com.zipcheck.android.ui.viewmodel.AlarmViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModel
 import com.zipcheck.android.ui.viewmodel.MyRegisterViewModelFactory
 import com.zipcheck.android.ui.viewmodel.MyRiskListVMFactory
@@ -94,6 +106,92 @@ import java.time.LocalDate
 import kotlin.collections.map
 
 class MainActivity : ComponentActivity() {
+    // MainActivity.kt 상단에 권한 요청 런처 선언
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // 권한이 방금 허용됨 -> 바로 구독 시작
+            val tokenManager = TokenManager(applicationContext)
+            val token = tokenManager.getAccessToken() ?: ""
+            if (token.isNotEmpty()) {
+                alarmViewModel.subscribeAlarm(token)
+            }
+            Log.d("Notification", "권한이 허용되어 알람 구독을 시작합니다.")
+        } else {
+            // 거부됨: 알림이 가지 않음을 사용자에게 알릴 필요가 있다면 여기에 로직 추가
+            Log.d("Notification", "권한이 거부되었습니다.")
+        }
+    }
+
+    private fun checkAndStartNotification(token: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                // 이미 권한이 있는 경우
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED -> {
+                    alarmViewModel.subscribeAlarm(token)
+                }
+                // 사용자가 이전에 거부한 적이 있는 경우 (설명 필요)
+                ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.POST_NOTIFICATIONS) -> {
+                    requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+                // 처음 권한을 요청하는 경우
+                else -> {
+                    requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            // 안드로이드 13 미만은 권한 요청 없이 바로 구독
+            alarmViewModel.subscribeAlarm(token)
+        }
+    }
+
+    private val alarmViewModel: AlarmViewModel by viewModels()
+
+    private fun showNotification(title: String, content: String) {
+        // 린트 에러 방지: 권한이 있는지 확인
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // 권한이 없으면 알림을 띄우지 않고 리턴
+            return
+        }
+
+        // 알림 클릭 시 MainActivity를 실행하도록 설정
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP // 이미 켜져있으면 새로 만들지 않음
+            putExtra("TARGET_SCREEN", "alarm_screen") // 목적지 정보 전달
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(this, "ALARM_CHANNEL")
+            .setSmallIcon(R.drawable.ic_notice)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent) // 클릭 이벤트 연결
+            .setAutoCancel(true)
+
+        with(NotificationManagerCompat.from(this)) {
+            notify(System.currentTimeMillis().toInt(), builder.build())
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "ALARM_CHANNEL", "앱 알림",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,10 +220,40 @@ class MainActivity : ComponentActivity() {
             "main_screen"
         }
         val tokenManager = TokenManager(context = applicationContext)
+        val accessToken = tokenManager.getAccessToken() ?: ""
+
+        createNotificationChannel()
 
         setContent {
             ZipcheckfrontTheme {
                 val navController = rememberNavController()
+
+                LaunchedEffect(accessToken) {
+                    if (accessToken.isNotEmpty()) {
+                        checkAndStartNotification(accessToken)
+                    }
+                }
+
+                // 실시간 알람 수신 시 시스템 노티피케이션 띄우기
+                val alarmEvent by alarmViewModel.alarmEvent.collectAsState()
+                // MainActivity.kt의 LaunchedEffect 부분 수정
+                LaunchedEffect(alarmEvent) {
+                    alarmEvent?.let { jsonString ->
+                        try {
+                            val gson = Gson()
+                            // 서버에서 내려주는 알람 객체 구조에 맞춰 DTO로 변환
+                            val alarmData = gson.fromJson(jsonString, AlarmDTO::class.java)
+
+                            showNotification(
+                                title = alarmData.notificationType, // 예: "신규 알림"
+                                content = alarmData.notificationContent // 예: "신고가 접수되었습니다."
+                            )
+                        } catch (e: Exception) {
+                            // 파싱 실패 시 원문이라도 출력
+                            showNotification("새로운 알림", jsonString)
+                        }
+                    }
+                }
 
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
@@ -142,6 +270,16 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     // NavController로 화면 전환 설정
+                    LaunchedEffect(intent) {
+                        val target = intent.getStringExtra("TARGET_SCREEN")
+                        if (target == "alarm_screen") {
+                            navController.navigate("alarm_screen") {
+                                // 중복 쌓기 방지
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+
                     NavHost(
                         navController = navController,
                         startDestination = initialRoute,

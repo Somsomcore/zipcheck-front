@@ -2,6 +2,7 @@ package com.zipcheck.android.data.network
 
 import android.content.Context
 import com.kakao.sdk.network.ApiFactory.loggingInterceptor
+import com.zipcheck.android.data.api.AlarmService
 import com.zipcheck.android.util.TokenManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -11,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitObj {
     // base url
-    private const val BASE_URL = "http://172.30.1.72:8080/"
+    private const val BASE_URL = "http://172.30.1.78:8080/"
 
     fun getRetrofit(context: Context): Retrofit {
         val tokenManager = TokenManager(context)
@@ -36,5 +37,9 @@ object RetrofitObj {
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+    fun getAlarmService(context: Context): AlarmService {
+        return getRetrofit(context).create(AlarmService::class.java)
     }
 }
