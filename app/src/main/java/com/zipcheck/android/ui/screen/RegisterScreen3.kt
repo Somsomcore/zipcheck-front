@@ -63,6 +63,8 @@ import com.zipcheck.android.ui.theme.PlaceholderGray
 import com.zipcheck.android.ui.theme.TextFieldBorderGray
 import com.zipcheck.android.ui.theme.White
 import kotlinx.coroutines.flow.distinctUntilChanged
+import android.provider.OpenableColumns
+import androidx.compose.ui.text.style.TextOverflow
 
 
 // 재사용 가능한 클릭 가능한 입력 필드 (Text + Icon)
@@ -116,7 +118,10 @@ fun ClickableField(
                     Text(
                         text = if (value.isNotEmpty()) value else placeholderText,
                         color = if (value.isNotEmpty()) Color.Black else PlaceholderGray,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
                 trailingIcon?.invoke()
@@ -162,7 +167,15 @@ fun RegisterScreen3(
 
             // VM에 증빙 파일 저장
             reportVm.setEvidence(uri)
-            fileName = uri.lastPathSegment ?: "evidence.pdf"
+            
+            var extractedName = "evidence.pdf"
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst() && nameIndex >= 0) {
+                    extractedName = cursor.getString(nameIndex)
+                }
+            }
+            fileName = extractedName
             Log.d(TAG, "evidence set in VM, fileName=$fileName") // ★ 로그
         }
     }
@@ -278,7 +291,9 @@ fun RegisterScreen3(
                             unfocusedBorderColor = Black,
                             cursorColor = MainBlue,
                             focusedContainerColor = White,
-                            unfocusedContainerColor = White
+                            unfocusedContainerColor = White,
+                            focusedTextColor = Black,
+                            unfocusedTextColor = Black
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )

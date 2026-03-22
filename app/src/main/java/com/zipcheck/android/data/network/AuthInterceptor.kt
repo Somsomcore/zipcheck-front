@@ -1,7 +1,6 @@
 package com.zipcheck.android.data.network
 
 import com.zipcheck.android.util.TokenManager
-import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -16,11 +15,13 @@ class AuthInterceptor(private val tokenManager: TokenManager) : Interceptor {
             )
         }
 
-        val accessToken = runBlocking { tokenManager.getAccessToken() }
-        val authedRequest = request.newBuilder()
-            .addHeader("Authorization", "Bearer $accessToken")
-            .build()
+        val accessToken = tokenManager.getAccessToken()
+        val builder = request.newBuilder()
+        
+        if (!accessToken.isNullOrBlank()) {
+            builder.addHeader("Authorization", "Bearer $accessToken")
+        }
 
-        return chain.proceed(authedRequest)
+        return chain.proceed(builder.build())
     }
 }

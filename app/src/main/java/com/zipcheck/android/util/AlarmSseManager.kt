@@ -40,7 +40,7 @@ class AlarmSseManager(
             override fun onComment(comment: String) {}
         }
 
-        val url = "https://your-api-domain.com/api/alarm/subscribe" // 실제 서버 주소
+        val url = "http://172.30.1.72:8080/api/alarm/subscribe" // 실제 서버 주소
         val uri = URI.create(url)
 
         val connectStrategy = ConnectStrategy.http(uri)

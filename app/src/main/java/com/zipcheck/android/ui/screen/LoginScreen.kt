@@ -278,6 +278,8 @@ private fun handleKakaoLogin(
                         popUpTo("login_screen") { inclusive = true }
                     }
                 }
+            } else {
+                showHttpDebugToast(context, response, "Kakao Login Server Error")
             }
         }
         override fun onFailure(call: Call<SocialLoginResponse>, t: Throwable) {
@@ -311,6 +313,8 @@ private fun handleNaverLogin(
                         popUpTo("login_screen") { inclusive = true }
                     }
                 }
+            } else {
+                showHttpDebugToast(context, response, "Naver Login Server Error")
             }
         }
         override fun onFailure(call: Call<SocialLoginResponse>, t: Throwable) {

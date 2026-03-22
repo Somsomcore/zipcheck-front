@@ -169,7 +169,7 @@ class MainActivity : ComponentActivity() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(this, "ALARM_CHANNEL")
+        val builder = NotificationCompat.Builder(this, "ALARM_CHANNEL_V2")
             .setSmallIcon(R.drawable.ic_notice)
             .setContentTitle(title)
             .setContentText(content)
@@ -185,7 +185,7 @@ class MainActivity : ComponentActivity() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "ALARM_CHANNEL", "앱 알림",
+                "ALARM_CHANNEL_V2", "앱 알림",
                 NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)

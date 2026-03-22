@@ -15,7 +15,7 @@ class ResponseInterceptor(
         val request = chain.request()
         val response = chain.proceed(request)
 
-        if (response.code == 401) {
+        if (response.code == 403) {
             Log.e("ResponseInterceptor", "401 Unauthorized 감지 → 로그인 이동")
 
             // 토큰 삭제
