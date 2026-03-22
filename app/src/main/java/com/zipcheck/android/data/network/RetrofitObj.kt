@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitObj {
     // base url
-    const val BASE_URL = "http://172.30.1.72:8080/"
+    const val BASE_URL = "http://192.168.219.195:8080/"
 
     fun getRetrofit(context: Context): Retrofit {
         val tokenManager = TokenManager(context)
