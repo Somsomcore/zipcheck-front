@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.zipcheck.android.data.model.alarm.AlarmDTO
 import com.zipcheck.android.data.network.RetrofitObj
 import com.zipcheck.android.util.AlarmSseManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -41,7 +42,7 @@ class AlarmViewModel(application: Application) : AndroidViewModel(application) {
 
     // 알람 목록 조회
     fun fetchAlarms(token: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Bearer 붙여서 호출 (명세서 확인)
                 val response = alarmService.getAlarmList("Bearer $token", page = 0, size = 20).execute()
@@ -56,7 +57,7 @@ class AlarmViewModel(application: Application) : AndroidViewModel(application) {
 
     // 2. 알람 모두 읽음 처리 (확인)
     fun confirmAllAlarms(token: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 alarmService.confirmAlarm("Bearer $token").execute()
                 // 확인 후 로컬 상태 업데이트 (모두 읽음으로 표시)
