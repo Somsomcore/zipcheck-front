@@ -1,5 +1,6 @@
 package com.zipcheck.android.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zipcheck.android.data.model.report.DailyRiskResult
@@ -66,6 +67,7 @@ class MyRiskListViewModel(
                 _items.value = myRiskItems
             } else {
                 _error.value = "HTTP ${res.code()}"
+                Log.e("API_CHECK", "에러 발생: ${res.code()}, 내용: ${res.errorBody()?.string()}")
             }
         }
     }

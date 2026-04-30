@@ -47,7 +47,7 @@ class AlarmViewModel(application: Application) : AndroidViewModel(application) {
                 // Bearer 붙여서 호출 (명세서 확인)
                 val response = alarmService.getAlarmList("Bearer $token", page = 0, size = 20).execute()
                 if (response.isSuccessful) {
-                    _alarmList.value = response.body()?.result?.alarmList ?: emptyList()
+                    _alarmList.value = response.body()?.result?.alarms ?: emptyList()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

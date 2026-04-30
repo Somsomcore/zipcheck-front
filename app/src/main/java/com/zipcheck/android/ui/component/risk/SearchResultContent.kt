@@ -39,6 +39,7 @@ import com.zipcheck.android.ui.theme.SectionGray
 import com.zipcheck.android.ui.theme.TextGreen
 import com.zipcheck.android.ui.theme.TextOrange
 import com.zipcheck.android.ui.theme.TextRed
+import kotlin.math.abs
 
 @Composable
 fun SearchResultContent(
@@ -57,15 +58,15 @@ fun SearchResultContent(
     addressDetail: String,
     stddev: Double
 ) {
-    val color = when (riskLevel.lowercase()) {
+    val color = when (riskLevel) {
         "Critical" -> CircleRed // 빨간색 (88%)
-        "Danger" -> CircleOrange // 주황색 (60%)
+        "Caution" -> CircleOrange // 주황색 (60%)
         else -> CircleGreen // 기본/안전 (녹색)
     }
 
-    val txtColor = when (riskLevel.lowercase()) {
+    val txtColor = when (riskLevel) {
         "Critical" -> TextRed // 빨간색 (88%)
-        "Danger" -> TextOrange // 주황색 (60%)
+        "Caution" -> TextOrange // 주황색 (60%)
         else -> TextGreen // 기본/안전 (녹색)
     }
 
@@ -104,7 +105,7 @@ fun SearchResultContent(
                     ) {
                         if (riskLevel == "Critical") {
                             append("매우 위험")
-                        } else if (riskLevel == "Danger"){
+                        } else if (riskLevel == "Caution"){
                             append("주의")
                         } else {
                             append("보통")
@@ -118,8 +119,14 @@ fun SearchResultContent(
 
             Spacer(modifier = Modifier.height(1.dp)) // 두 줄 사이 간격
 
-            // 두 번째 줄: "동일 면적·거래가 매물 대비 보증금이 10% 높습니다."
-            // 일부 텍스트에만 빨간색과 굵은 글씨체 적용
+//            val displayPct = Math.abs(depositPct) // - 부호 제거
+//            val safetyMessage = if (depositPct < 0) {
+//                "${displayPct}% 낮습니다"
+//            } else {
+//                "${depositPct}% 높습니다" // 양수일 때의 처리 (기존 로직 유지)
+//            }
+//
+//            Text(text = safetyMessage, color = if (depositPct < 0) MainBlue else Color.Red)
             Text(
                 text = buildAnnotatedString {
                     append("동일 면적·거래가 매물 대비 보증금이 ")
@@ -129,13 +136,11 @@ fun SearchResultContent(
                             fontWeight = FontWeight.Bold
                         )
                     ) {
-                        append(depositPct.toString())
+                        append(abs(depositPct.toInt()).toString())
                     }
-                    if (riskLevel == "Critical") {
+                    if (depositPct.toInt() > 0) {
                         append("% 높습니다")
-                    } else if (riskLevel == "Danger") {
-                        append("% 높습니다")
-                    } else {
+                    } else if (depositPct.toInt() < 0) {
                         append("% 낮습니다")
                     }
                 },

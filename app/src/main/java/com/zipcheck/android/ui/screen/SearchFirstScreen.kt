@@ -22,8 +22,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -209,6 +211,7 @@ fun SearchScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
                 .pointerInput(Unit) {
                     // `detectTapGestures`를 사용해 탭(터치)이 발생했을 때 키보드를 내립니다.
                     detectTapGestures(onTap = {
@@ -283,16 +286,6 @@ fun SearchScreen(navController: NavHostController) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
-                // 매물 종류
-//            SearchTextField(
-//                label = "매물 종류",
-//                value = houseType,
-//                onValueChange = { houseType = it },
-//                placeholderText = "아파트/다세대",
-//                trailingIcon = {
-//                    Icon(painterResource(id = R.drawable.ic_dropdown), contentDescription = null, tint = Color.Gray)
-//                }
-//            )
                 ClickableTextField(
                     label = "매물 종류",
                     value = houseType, // 선택된 값을 표시
@@ -324,7 +317,8 @@ fun SearchScreen(navController: NavHostController) {
             }
 
             // ✅ 하단 버튼을 위로 밀어내는 Spacer
-            Spacer(modifier = Modifier.weight(1f))
+            //Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 다음 버튼
             Button(

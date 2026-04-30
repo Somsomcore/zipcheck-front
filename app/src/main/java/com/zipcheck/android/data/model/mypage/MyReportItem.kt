@@ -23,7 +23,8 @@ data class MyReports(
     @SerializedName("addrDetail") val addressDetail: String,
     @SerializedName("content") val content: String,
     @SerializedName("contractType") val contractType: String, // 계약형태 아파트
-    @SerializedName("classification") val classification: String,
+    @SerializedName("classification")  val classificationId: Int,
+    @SerializedName("classificationName") val classificationName: String,
     @SerializedName("contractedAt") val contractAt: String, // 계약일자
     @SerializedName("createdAt") val createdAt: String,
 )
@@ -34,7 +35,8 @@ data class MyReportItem(
     val addrDetail: String,
     val content: String,
     val contractType: String,
-    val classification: String,
+    val classificationId: Int,
+    val classificationName: String,
     val contractAt: String
 )
 
@@ -45,7 +47,8 @@ fun MyReports.toMyReportItem(): MyReportItem {
         addrDetail = addressDetail,
         content = content,
         contractType = contractType,
-        classification = classification,
+        classificationId = classificationId,
+        classificationName = classificationName,
         contractAt = contractAt
     )
 }

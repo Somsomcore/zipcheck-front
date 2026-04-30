@@ -138,7 +138,7 @@ fun MyRegisterScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "데이터 로딩 중 오류 발생: ${state.message}",
+                            text = "데이터 로딩 중 오류가 발생하였습니다.",
                             color = Color.Red
                         )
                     }

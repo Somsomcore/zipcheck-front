@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class MyRegisterViewModel(
     private val reportRepository: ReportRepository,
     // 실제 환경에서는 DI를 통해 토큰을 관리해야 합니다. 여기서는 예시를 위해 하드코딩합니다.
-    private val dummyToken: String = "YOUR_ACCESS_TOKEN",
+    private val dummyToken: String,
     private val status: RegistrationStatus,
     private val page: Int,
     private val size: Int

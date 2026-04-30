@@ -363,7 +363,46 @@ fun RegisterScreen3(
                             Text("제출 중...", color = MainBlue)
                         }
                         is SubmitState.Error -> {
-                            Text(s.message, color = Color.Red)
+                            val parsedMessage = try {
+                                val startIndex = s.message.indexOf("{")
+                                val endIndex = s.message.lastIndexOf("}")
+
+                                if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+                                    // 순수 JSON 문자열 추출
+                                    val jsonString = s.message.substring(startIndex, endIndex + 1)
+                                    val jsonObject = org.json.JSONObject(jsonString)
+
+                                    // JSON에서 code와 message 추출 (안전하게 처리)
+                                    val errorCode = if (jsonObject.has("code")) jsonObject.getString("code") else ""
+                                    val serverMessage = if (jsonObject.has("message")) jsonObject.getString("message") else "오류가 발생했습니다."
+
+                                    // 🌟 에러 코드에 따라 보여줄 메시지 커스텀
+                                    when (errorCode) {
+                                        "CONTRACTTYPE4000" -> "계약 형태를 다시 확인해 주세요."
+                                        "REPORT4001" -> "이미 신고된 주소입니다. 내역을 확인해 주세요."
+                                        // 추가적인 에러 코드가 있다면 여기에 계속 작성
+
+                                        else -> serverMessage // 정의되지 않은 코드면 서버에서 준 메시지 그대로 출력
+                                    }
+                                } else {
+                                    // JSON 포맷이 아예 없는 경우 (HTTP 상태 코드만 넘어왔을 때 등)
+                                    when {
+                                        s.message.contains("404") -> "요청한 데이터를 찾을 수 없습니다."
+                                        s.message.contains("409") -> "중복된 요청입니다."
+                                        else -> "서버와 통신 중 문제가 발생했습니다."
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                // 파싱 중 에러가 나면 띄워줄 기본 문구
+                                "제출에 실패했습니다. 다시 시도해 주세요."
+                            }
+
+                            Text(
+                                text = parsedMessage,
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
                         }
                         is SubmitState.Success -> {
                             // 성공 이동은 LaunchedEffect에서 처리

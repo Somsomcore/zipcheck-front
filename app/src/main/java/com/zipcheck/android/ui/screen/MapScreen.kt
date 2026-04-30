@@ -148,6 +148,30 @@ fun MapScreen(navController: NavHostController, accessToken: String) {
         if (!perms.allPermissionsGranted) perms.launchMultiplePermissionRequest()
     }
 
+//    DisposableEffect(Unit) {
+//        mapView.resume()
+//        onDispose {
+//            mapView.pause()
+//        }
+//    }
+
+    // 권한이 나중에 허용되었을 때 내 위치로 이동하는 로직
+    LaunchedEffect(perms.allPermissionsGranted, kakaoMap) {
+        if (perms.allPermissionsGranted && kakaoMap != null) {
+            try {
+                @SuppressLint("MissingPermission")
+                val last = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                last?.let {
+                    val myPos = LatLng.from(it.latitude, it.longitude)
+                    kakaoMap?.moveCamera(CameraUpdateFactory.newCenterPosition(myPos, 15))
+                    refreshPins(myPos)
+                }
+            } catch (e: Exception) {
+                Log.e("MapScreen", "Location fetch error: ${e.message}")
+            }
+        }
+    }
+
     Scaffold(
         containerColor = White,
         topBar = { CustomTopBar("탐색", navController) }
@@ -155,7 +179,76 @@ fun MapScreen(navController: NavHostController, accessToken: String) {
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
 
             // 1. 지도 영역
-            AndroidView(modifier = Modifier.fillMaxSize(), factory = { mapView })
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = {
+                    mapView.apply {
+                        start(
+                            object : MapLifeCycleCallback() {
+                                override fun onMapDestroy() {
+                                    Log.d("MapScreen", "지도 소멸")
+                                }
+                                override fun onMapError(e: Exception?) {
+                                    Log.e("MapScreen", "지도 에러: ${e?.message}")
+                                }
+                            },
+                            object : KakaoMapReadyCallback() {
+                                @SuppressLint("MissingPermission")
+                                override fun onMapReady(map: KakaoMap) {
+                                    kakaoMap = map
+                                    mapView.resume()
+                                    val layer = map.labelManager?.layer
+                                    pinsLayer = layer
+                                    layer?.setClickable(true)
+
+                                    // 마커 클릭 리스너
+                                    map.setOnLabelClickListener { _, _, clickedLabel ->
+                                        val addr = labelToAddr[clickedLabel]
+                                            ?: return@setOnLabelClickListener false
+                                        scope.launch {
+                                            try {
+                                                val reports = reportRepo.fetchReportsByAddress(
+                                                    accessToken, addr, 0, 10
+                                                )
+                                                if (reports.size <= 1) {
+                                                    detailItem = reports.firstOrNull()
+                                                    showDetailSheet = detailItem != null
+                                                } else {
+                                                    listItems.clear()
+                                                    listItems.addAll(reports)
+                                                    showListSheet = true
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("MapScreen", "Marker click error: ${e.message}")
+                                            }
+                                        }
+                                        true
+                                    }
+
+                                    // 초기 위치 설정
+                                    if (perms.allPermissionsGranted) {
+                                        locationManager.getLastKnownLocation(
+                                            android.location.LocationManager.GPS_PROVIDER
+                                        )?.let { last ->
+                                            val init = LatLng.from(last.latitude, last.longitude)
+                                            map.moveCamera(
+                                                CameraUpdateFactory.newCenterPosition(init, 15)
+                                            )
+                                            refreshPins(init)
+                                        }
+                                    } else {
+                                        // 권한 없으면 서울시청 기본 위치
+                                        val defaultPos = LatLng.from(37.5666805, 126.9784147)
+                                        map.moveCamera(
+                                            CameraUpdateFactory.newCenterPosition(defaultPos, 15)
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            )
 
             // 2. 검색창
             SearchBarOverlay(
@@ -234,56 +327,6 @@ fun MapScreen(navController: NavHostController, accessToken: String) {
             if (showNoResultOverlay) {
                 Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp)) {
                     NoResultOverlay(lastSearchQuery)
-                }
-            }
-
-            // 지도 생명주기 및 초기 설정
-            DisposableEffect(perms.allPermissionsGranted) {
-                if (perms.allPermissionsGranted) {
-                    mapView.start(object : MapLifeCycleCallback() {
-                        override fun onMapDestroy() {}
-                        override fun onMapError(e: Exception?) {}
-                    }, object : KakaoMapReadyCallback() {
-                        @SuppressLint("MissingPermission")
-                        override fun onMapReady(map: KakaoMap) {
-                            kakaoMap = map
-                            val layer = map.labelManager?.layer
-                            pinsLayer = layer
-
-                            layer?.setClickable(true)
-
-                            map.setOnLabelClickListener { _, _, clickedLabel ->
-                                val addr = labelToAddr[clickedLabel] ?: return@setOnLabelClickListener false
-                                Log.d("MapScreen", "마커 클릭됨: $addr")
-                                scope.launch {
-                                    try {
-                                        val reports = reportRepo.fetchReportsByAddress(accessToken, addr, 0, 10)
-                                        if (reports.size <= 1) {
-                                            detailItem = reports.firstOrNull()
-                                            showDetailSheet = detailItem != null
-                                        } else {
-                                            listItems.clear()
-                                            listItems.addAll(reports)
-                                            showListSheet = true
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("MapScreen", "Marker click error: ${e.message}")
-                                    }
-                                }
-                                true
-                            }
-
-                            // 초기 위치 설정 (현재 위치)
-                            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { last ->
-                                val init = LatLng.from(last.latitude, last.longitude)
-                                map.moveCamera(CameraUpdateFactory.newCenterPosition(init, 15))
-                                refreshPins(init)
-                            }
-                        }
-                    })
-                }
-                onDispose {
-                    mapView.pause()
                 }
             }
         }

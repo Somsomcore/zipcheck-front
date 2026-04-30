@@ -100,6 +100,7 @@ fun AlarmItemView(alarm: AlarmDTO) {
     val badgeTextColor = if (isRejected) ErrorRed else DarkBlack
 
     // Heuristic parsing: Details often contain "|", Bottom info often starts with "ⓘ" or similar
+    val formattedDate = alarm.createdAt.substringBefore("T")
     val rawLines = alarm.notificationContent.split("\n")
     val detailLines = rawLines.filter { it.contains("|") }
     // As we can't be sure about the Info character in API, we'll assume the last line might be it if it starts with an info indicator, or just let users see it in Title if it doesn't match
@@ -109,12 +110,6 @@ fun AlarmItemView(alarm: AlarmDTO) {
     val title = titleLines.joinToString("\n").trim()
     val details = detailLines.joinToString("\n").trim()
     val bottomText = bottomLines.joinToString("\n").trim()
-    
-    // Also the Floating Icon (K icon)
-    // Looking at the mockup, 'K' is likely Kakao. 
-    // We'll optionally show it if it's a rejection maybe? Or maybe it's always there for rejected?
-    // Let's rely on standard logic, just show it if `isRejected` is true as in the mockup, or we can just leave it since it might not be relevant to all. 
-    // The mockup shows it for the rejected item. Let's add it.
 
     Box(
         modifier = Modifier
@@ -157,7 +152,7 @@ fun AlarmItemView(alarm: AlarmDTO) {
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = alarm.createdAt,
+                        text = formattedDate,
                         fontSize = 13.sp,
                         color = Black
                     )

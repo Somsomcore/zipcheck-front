@@ -1,6 +1,7 @@
 package com.zipcheck.android.ui.screen
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
+import com.kakao.sdk.common.util.Utility
 import com.zipcheck.android.R
 import com.kakao.sdk.user.UserApiClient
 import com.navercorp.nid.NaverIdLoginSDK
@@ -58,6 +60,7 @@ import retrofit2.Response
 
 @Composable
 fun LoginScreen(navController: NavController) {
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current

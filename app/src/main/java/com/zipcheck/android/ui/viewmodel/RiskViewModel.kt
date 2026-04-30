@@ -27,7 +27,7 @@ class RiskViewModel(
                 val res = repo.analyze(accessToken, regionCode, req)
 
                 Log.d("RiskViewModel", "✅ HTTP 코드: ${res.code()}")
-                Log.d("RiskViewModel", "✅ HTTP 메시지: ${res.message()}")
+                Log.d("RiskViewModel", "✅ HTTP 메시지: ${res.body()}")
 
                 if (res.isSuccessful && res.body()?.isSuccess == true) {
                     _ui.value = RiskUiState.Success(res.body()!!.result)

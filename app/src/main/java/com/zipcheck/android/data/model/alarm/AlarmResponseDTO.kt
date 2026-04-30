@@ -8,7 +8,7 @@ data class AlarmResponseDTO(
 )
 
 data class AlarmResultDTO(
-    val alarmList: List<AlarmDTO>,
+    val alarms: List<AlarmDTO>,
     val totalPages: Int,
     val currentPage: Int,
     val totalElements: Int,

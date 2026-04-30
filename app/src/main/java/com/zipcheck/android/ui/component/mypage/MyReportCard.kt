@@ -1,7 +1,9 @@
 package com.zipcheck.android.ui.component.mypage
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,7 +40,7 @@ fun MyReportCard(item: MyReportItem) {
     ) {
         Column(Modifier.padding(16.dp)) {
 
-            TypeBadge(item.classification)
+            TypeBadge(item.classificationName)
 
             Spacer(Modifier.height(16.dp))
             Text(
@@ -110,15 +112,9 @@ fun MyReportCard(item: MyReportItem) {
 // === 작은 구성요소들 ===
 @Composable
 private fun TypeBadge(text: String) {
-    Surface(
-        color = MainBlue,
-        shape = RoundedCornerShape(10.dp)
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
+    Box(
+        modifier = Modifier
+            .background(color = MainBlue, shape = RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) { Text(text.trim(), color = Color.White, fontSize = 12.sp) }
 }

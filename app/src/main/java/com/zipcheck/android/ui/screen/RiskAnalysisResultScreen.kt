@@ -48,13 +48,13 @@ fun RiskAnalysisResultScreen(
 
     val color = when (result.riskLevel.lowercase()) {
         "Critical" -> CircleRed // 빨간색 (88%)
-        "Danger" -> CircleOrange // 주황색 (60%)
+        "Caution" -> CircleOrange // 주황색 (60%)
         else -> CircleGreen // 기본/안전 (녹색)
     }
 
     val txtColor = when (result.riskLevel.lowercase()) {
         "Critical" -> TextRed // 빨간색 (88%)
-        "Danger" -> TextOrange // 주황색 (60%)
+        "Caution" -> TextOrange // 주황색 (60%)
         else -> TextGreen // 기본/안전 (녹색)
     }
 
@@ -96,7 +96,7 @@ fun RiskAnalysisResultScreen(
                         ) {
                             if (result.riskLevel == "Critical") {
                                 append("매우 위험")
-                            } else if (result.riskLevel == "Danger"){
+                            } else if (result.riskLevel == "Caution"){
                                 append("주의")
                             } else {
                                 append("보통")
@@ -127,7 +127,7 @@ fun RiskAnalysisResultScreen(
 
                         if (result.riskLevel == "Critical") {
                             append("% 높습니다")
-                        } else if (result.riskLevel == "Danger") {
+                        } else if (result.riskLevel == "Caution") {
                             append("% 높습니다")
                         } else {
                             append("% 낮습니다")

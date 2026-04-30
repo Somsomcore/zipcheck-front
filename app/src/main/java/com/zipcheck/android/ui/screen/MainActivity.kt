@@ -76,6 +76,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import com.google.gson.Gson
+import com.kakao.sdk.common.util.Utility
 import com.zipcheck.android.data.api.ReportService
 import com.zipcheck.android.data.model.alarm.AlarmDTO
 import com.zipcheck.android.data.model.mypage.RegistrationStatus
@@ -197,6 +198,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val keyHash = Utility.getKeyHash(this)
+        Log.e("KeyHash", "현재 앱의 키해시: $keyHash")
+
         try {
             val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
             for (signature in info.signatures!!) {
@@ -239,6 +243,10 @@ class MainActivity : ComponentActivity() {
                 // MainActivity.kt의 LaunchedEffect 부분 수정
                 LaunchedEffect(alarmEvent) {
                     alarmEvent?.let { jsonString ->
+                        if (jsonString.isBlank() || jsonString.contains("EventStream Created")) {
+                            return@let
+                        }
+
                         try {
                             val gson = Gson()
                             // 서버에서 내려주는 알람 객체 구조에 맞춰 DTO로 변환
@@ -248,6 +256,10 @@ class MainActivity : ComponentActivity() {
                                 title = alarmData.notificationType, // 예: "신규 알림"
                                 content = alarmData.notificationContent // 예: "신고가 접수되었습니다."
                             )
+
+                            if (accessToken.isNotEmpty()) {
+                                alarmViewModel.fetchAlarms(accessToken)
+                            }
                         } catch (e: Exception) {
                             // 파싱 실패 시 원문이라도 출력
                             showNotification("새로운 알림", jsonString)
@@ -327,7 +339,11 @@ class MainActivity : ComponentActivity() {
 
                         composable("alarm_screen") {
                             val accessToken = tokenManager.getAccessToken() ?: ""
-                            AlarmScreen(navController = navController, accessToken = accessToken)
+                            AlarmScreen(
+                                navController = navController,
+                                accessToken = accessToken,
+                                viewModel = alarmViewModel
+                            )
                         }
 
                         composable("risk_analysis_record") {
